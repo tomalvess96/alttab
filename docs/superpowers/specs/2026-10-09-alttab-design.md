@@ -157,7 +157,10 @@ novo na próxima mensagem.
    (seção 6). Validar logo no início.
 2. **Option+Tab engolido** — o CGEventTap tem que consumir o Tab só enquanto Option está segurado e
    devolver todo o resto; bug aqui atrapalha o teclado inteiro. Mitigação: tap mínimo e testado primeiro.
-3. **DOM do YouTube Music muda** — seletores quebram. Mitigação: `mediaSession` como alternativa; player some
+3. **Secure Input bloqueia a hotkey** — com campo de senha focado ou "Secure Keyboard Entry" ligado num
+   terminal, o macOS não entrega teclas ao CGEventTap e o Option+Tab "morre" (já aconteceu com atalhos globais
+   neste Mac). Mitigação: detectar Secure Input ativo e avisar no ícone da barra de menu qual app está segurando.
+4. **DOM do YouTube Music muda** — seletores quebram. Mitigação: `mediaSession` como alternativa; player some
    em vez de mostrar dado errado.
 
 ## 9. Instalação
