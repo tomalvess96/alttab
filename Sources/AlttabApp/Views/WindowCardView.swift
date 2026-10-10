@@ -106,7 +106,7 @@ struct WindowCardView: View {
             Image(decorative: thumbnail, scale: 1)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
         } else {
             ZStack {
                 Color(red: 0.055, green: 0.063, blue: 0.075)
