@@ -81,7 +81,7 @@ struct TabHeroView: View {
                 }
             }
             .frame(height: 120)
-            .frame(maxWidth: .infinity)
+            .frame(minWidth: 0, maxWidth: .infinity)
             .clipShape(.rect(cornerRadius: 9))
             .overlay(alignment: .bottomTrailing) {
                 if let ago = Ago.text(capturedAt) { AgoBadge(text: ago).padding(8) }
@@ -136,7 +136,7 @@ struct MiniTabCard: View {
                 }
             }
             .frame(height: height)
-            .frame(maxWidth: .infinity)
+            .frame(minWidth: 0, maxWidth: .infinity)
             .clipped()
             ItemIcon(item: item, size: 15).shadow(radius: 2).padding(5)
             if item.tab?.audible == true {
