@@ -117,7 +117,7 @@ final class BrowserBridge: @unchecked Sendable {
     private func serve() {
         try? BridgePaths.prepareDirectory()
         guard let server = try? UnixSocket.listen(path: BridgePaths.socket) else {
-            NSLog("Alttab: não consegui abrir o socket da ponte em %@", BridgePaths.socket)
+            NSLog("AltTab: não consegui abrir o socket da ponte em %@", BridgePaths.socket)
             return
         }
         while true {
