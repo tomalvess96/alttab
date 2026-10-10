@@ -5,6 +5,8 @@ struct WindowCardView: View {
     let item: WindowItem
     let isSelected: Bool
     let isWide: Bool
+    /// Miniatura já encolhida para a coluna caber no painel (nil = tamanho padrão).
+    var thumbHeight: CGFloat? = nil
     let isClosing: Bool
     let thumbnail: CGImage?
     var capturedAt: Date? = nil
@@ -23,7 +25,7 @@ struct WindowCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             thumb
-                .frame(height: isWide ? 112 : 58)
+                .frame(height: thumbHeight ?? (isWide ? 112 : 58))
                 .clipShape(.rect(cornerRadius: Theme.thumbRadius))
                 .overlay(alignment: .bottomTrailing) {
                     if let ago = Ago.text(capturedAt) { AgoBadge(text: ago).padding(5) }

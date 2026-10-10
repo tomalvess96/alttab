@@ -48,6 +48,7 @@ struct EdgeTabsView: View {
             item: tab,
             isSelected: tab.id == state.model.selectedID,
             isWide: isFocused,
+            thumbHeight: state.cardThumbHeight(count: min(tabs.count, 4), wide: isFocused),
             isClosing: tab.id == state.closingID,
             thumbnail: state.thumbnail(for: tab),
             capturedAt: state.capturedAt(for: tab),

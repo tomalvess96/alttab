@@ -12,4 +12,15 @@ public enum ColumnLayout {
             return min(width, index == focusedIndex ? caps.focused : caps.other)
         }
     }
+
+    /// Altura do cartão além da miniatura: margens, rótulo, borda e espaço até o próximo.
+    public static let cardChrome = 49.0
+    public static let minCardThumb = 24.0
+
+    /// Miniatura do cartão: o tamanho preferido, encolhendo para todos os cartões da coluna caberem na altura.
+    public static func cardThumbHeight(count: Int, preferred: Double, available: Double) -> Double {
+        guard count > 0 else { return preferred }
+        let fit = (available / Double(count)).rounded(.down) - cardChrome
+        return min(preferred, max(minCardThumb, fit))
+    }
 }

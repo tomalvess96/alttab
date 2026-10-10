@@ -12,7 +12,7 @@ struct SwitcherView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HeaderView(state: state)
+            HeaderView(state: state, controller: controller)
             columns
             Spacer(minLength: 0)
             player

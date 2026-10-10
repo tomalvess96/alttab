@@ -85,3 +85,23 @@ import Testing
         #expect(!ImageBlankness.isBlank(img))
     }
 }
+
+@Suite struct CardFitTests {
+    @Test func fewCardsKeepPreferredSize() {
+        #expect(ColumnLayout.cardThumbHeight(count: 2, preferred: 112, available: 470) == 112)
+    }
+
+    @Test func fourCardsShrinkToFit() {
+        let thumb = ColumnLayout.cardThumbHeight(count: 4, preferred: 112, available: 470)
+        #expect(thumb < 112)
+        #expect(4 * (thumb + ColumnLayout.cardChrome) <= 470)
+    }
+
+    @Test func neverBelowMinimum() {
+        #expect(ColumnLayout.cardThumbHeight(count: 30, preferred: 112, available: 470) == ColumnLayout.minCardThumb)
+    }
+
+    @Test func emptyColumnIsSafe() {
+        #expect(ColumnLayout.cardThumbHeight(count: 0, preferred: 58, available: 470) == 58)
+    }
+}

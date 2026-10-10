@@ -32,6 +32,7 @@ struct WorkspaceColumnView: View {
                     item: item,
                     isSelected: item.id == state.model.selectedID,
                     isWide: isFocused,
+                    thumbHeight: state.cardThumbHeight(count: windows.count + min(tabs.count, 4), wide: isFocused),
                     isClosing: item.id == state.closingID,
                     thumbnail: state.thumbnail(for: item),
                     query: state.model.query,
