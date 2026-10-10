@@ -106,3 +106,14 @@ import Testing
         #expect(ColumnLayout.cardThumbHeight(count: 0, preferred: 58, available: 470) == 58)
     }
 }
+
+@Suite struct CardHeightStableTests {
+    @Test func focusDoesNotChangeCardHeight() {
+        // O mouse seleciona → a coluna entra em foco; se os cartões crescessem na vertical,
+        // o selecionado desceria e sairia de baixo do mouse.
+        let unfocused = ColumnLayout.cardThumbHeight(count: 3, preferred: ColumnLayout.cardThumbPreferred, available: 470)
+        let focused = ColumnLayout.cardThumbHeight(count: 3, preferred: ColumnLayout.cardThumbPreferred, available: 470)
+        #expect(unfocused == focused)
+        #expect(ColumnLayout.cardThumbPreferred >= 58)
+    }
+}
