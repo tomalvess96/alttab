@@ -4,6 +4,10 @@ import ServiceManagement
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let store = WindowStore()
+    private let thumbs = WindowThumbs()
+    private lazy var controller = SwitcherController(store: store, thumbs: thumbs)
+    private let hotkey = HotkeyMonitor()
+    private var hotkeyActive = false
     private var statusItem: NSStatusItem!
     private var secureTimer: Timer?
 
@@ -17,6 +21,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         secureTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.setIcon(warning: SecureInput.holder() != nil) }
         }
+        hotkey.onInput = { [weak self] input in self?.controller.handle(input) ?? false }
+        hotkeyActive = hotkey.start()
+        if !hotkeyActive { openAccessibility() }
     }
 
     private func setIcon(warning: Bool) {
@@ -33,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         if let holder = SecureInput.holder() {
             menu.addItem(disabled("Option+Tab bloqueado: Secure Input ativo em \(holder)"))
+        }
+        if !hotkeyActive {
+            menu.addItem(disabled("Option+Tab desligado: conceda Acessibilidade e reabra o app"))
         }
         if !AXIsProcessTrusted() {
             menu.addItem(action("Conceder Acessibilidade…", #selector(openAccessibility)))
