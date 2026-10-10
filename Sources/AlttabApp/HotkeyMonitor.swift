@@ -10,21 +10,66 @@ final class HotkeyMonitor {
     /// Com o painel fechado, só o Tab interessa: o resto passa sem trabalho nenhum.
     var isSwitcherOpen: () -> Bool = { false }
     private var tap: CFMachPort?
+    private var source: CFRunLoopSource?
     private var optionWasHeld = false
+    private var watchdog: Timer?
 
     private static let digitKeycodes: [Int64: Int] = [18: 1, 19: 2, 20: 3, 21: 4, 23: 5, 22: 6, 26: 7, 28: 8, 25: 9, 29: 0]
 
+    private static let mask = CGEventMask(1 << CGEventType.keyDown.rawValue) | CGEventMask(1 << CGEventType.flagsChanged.rawValue)
+
     func start() -> Bool {
-        let mask = CGEventMask(1 << CGEventType.keyDown.rawValue) | CGEventMask(1 << CGEventType.flagsChanged.rawValue)
         let refcon = Unmanaged.passUnretained(self).toOpaque()
         guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
-                                          eventsOfInterest: mask, callback: hotkeyCallback, userInfo: refcon) else {
+                                          eventsOfInterest: Self.mask, callback: hotkeyCallback, userInfo: refcon) else {
             return false
         }
+        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
         self.tap = tap
-        CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tap, 0), .commonModes)
+        self.source = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
+        startWatchdog()
         return true
+    }
+
+    /// Joga fora o tap atual e cria outro. Usado quando o sistema diz que o tap está ligado
+    /// mas as teclas não chegam (visto em 10/out: segundos por tecla, callback parado).
+    @discardableResult
+    func restart() -> Bool {
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            CFMachPortInvalidate(tap)
+        }
+        if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
+        tap = nil
+        source = nil
+        guard start() else { return false }
+        reenable()
+        return true
+    }
+
+    /// A cada 5 s confere o tap na lista do sistema; morto, desligado ou lento demais → recria.
+    /// Com o painel aberto não mexe: a primeira abertura monta a tela e já mediu ~600 ms num tap saudável.
+    private func startWatchdog() {
+        guard watchdog == nil else { return }
+        watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.tap != nil, !self.isSwitcherOpen(), self.isUnhealthy() else { return }
+                self.restart()
+            }
+        }
+    }
+
+    private func isUnhealthy() -> Bool {
+        var count: UInt32 = 0
+        guard CGGetEventTapList(0, nil, &count) == .success, count > 0 else { return false }
+        var list = [CGEventTapInformation](repeating: CGEventTapInformation(), count: Int(count))
+        guard CGGetEventTapList(count, &list, &count) == .success else { return false }
+        let pid = getpid()
+        let mine = list.prefix(Int(count)).first { $0.tappingProcess == pid && $0.eventsOfInterest == Self.mask }
+        return TapHealth.needsRestart(found: mine != nil, enabled: mine?.enabled ?? false,
+                                      avgLatencyMicros: mine?.avgUsecLatency ?? 0)
     }
 
     fileprivate func reenable() {
