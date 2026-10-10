@@ -13,6 +13,8 @@ final class SwitcherState {
 
     /// Fonte das abas do Edge (miniaturas e "visto há" chegam ao vivo enquanto o painel está aberto).
     var browser: BrowserStore?
+    /// Capa do álbum ampliada no centro do painel.
+    var coverOpen = false
 
     func thumbnail(for item: WindowItem) -> CGImage? {
         if let tab = item.tab { return browser?.thumbnails[tab.tabId] }
@@ -54,6 +56,11 @@ final class SwitcherController {
     /// Janelas do AeroSpace com as janelas do Edge trocadas pelas abas (se a extensão estiver ligada).
     private func currentItems() -> [WindowItem] {
         browser.connected ? TabComposer.compose(windows: store.mruOrdered, tabs: browser.tabs) : store.mruOrdered
+    }
+
+    func mediaControl(_ action: MediaAction) {
+        guard let media = browser.currentMedia else { return }
+        bridge.send(.mediaControl(tabId: media.tabId, action: action))
     }
 
     func select(_ id: Int) {
@@ -101,6 +108,7 @@ final class SwitcherController {
         state.model = SwitcherModel(windows: currentItems(), currentWorkspace: store.currentWorkspace)
         state.thumbnails = thumbs.cache
         state.closingID = nil
+        state.coverOpen = false
         state.openCount += 1
         let mouse = NSEvent.mouseLocation
         hoverGate.reset(x: mouse.x, y: mouse.y)
