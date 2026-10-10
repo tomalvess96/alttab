@@ -1,4 +1,4 @@
-import { tabsMessage, thumbSize, capturable } from "./lib.js";
+import { tabsMessage, thumbSize, capturable, faviconRequestUrl } from "./lib.js";
 
 const HOST = "br.inf.brusoft.alttab";
 let port = null;
@@ -30,9 +30,25 @@ function post(message) {
   }
 }
 
+const favicons = {};
+
+async function loadFavicon(url) {
+  if (!capturable(url) || favicons[url]) return;
+  try {
+    const response = await fetch(faviconRequestUrl(chrome.runtime.getURL("/_favicon/"), url));
+    if (response.ok) favicons[url] = await toBase64(await response.blob());
+  } catch {}
+}
+
 function sendTabs() {
   clearTimeout(tabsTimer);
-  tabsTimer = setTimeout(async () => post(tabsMessage(await chrome.tabs.query({}))), 150);
+  tabsTimer = setTimeout(async () => {
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs.map((tab) => loadFavicon(tab.url)));
+    const live = new Set(tabs.map((tab) => tab.url));
+    for (const url of Object.keys(favicons)) if (!live.has(url)) delete favicons[url];
+    post(tabsMessage(tabs, favicons));
+  }, 150);
 }
 
 function scheduleCapture(windowId, delay = 350) {

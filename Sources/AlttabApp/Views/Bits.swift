@@ -87,10 +87,15 @@ struct TabIcon: View {
     let tab: TabRef
     let size: CGFloat
 
+    /// O ícone vem em bytes da extensão (cache de favicons do Edge): nenhum download a pedido da página.
+    private var image: NSImage? {
+        tab.favIconData.flatMap { Data(base64Encoded: $0) }.flatMap(NSImage.init(data:))
+    }
+
     var body: some View {
-        AsyncImage(url: SafeRemoteURL.make(tab.favIconURL)) { phase in
-            if let image = phase.image {
-                image.resizable().interpolation(.high)
+        Group {
+            if let image {
+                Image(nsImage: image).resizable().interpolation(.high)
             } else {
                 Text(String(tab.host.prefix(1)).uppercased())
                     .font(.system(size: size * 0.55, weight: .semibold))
