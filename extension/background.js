@@ -1,4 +1,4 @@
-import { tabsMessage, thumbSize, capturable, faviconRequestUrl } from "./lib.js";
+import { tabsMessage, thumbSize, capturable, faviconRequestUrl, thumbsToResend, pruneThumbCache } from "./lib.js";
 
 const HOST = "br.inf.brusoft.alttab";
 let port = null;
@@ -67,7 +67,9 @@ async function captureActive(windowId) {
     const canvas = new OffscreenCanvas(size.width, size.height);
     canvas.getContext("2d").drawImage(bitmap, 0, 0, size.width, size.height);
     const jpeg = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.72 });
-    post({ type: "thumb", tabId: tab.id, jpegBase64: await toBase64(jpeg), capturedAt: Date.now() });
+    const thumb = { jpegBase64: await toBase64(jpeg), capturedAt: Date.now() };
+    post({ type: "thumb", tabId: tab.id, ...thumb });
+    rememberThumb(tab.url, thumb);
   } catch {
     // Janela minimizada, página protegida ou limite de capturas por segundo: segue sem foto.
   }
@@ -80,9 +82,36 @@ async function toBase64(blob) {
   return btoa(binary);
 }
 
+// Fotos das abas guardadas no Edge (por endereço): sobrevivem a reinício do app, da extensão e do Edge.
+// Sem isso, depois de reiniciar o app só a aba visível de cada janela tinha foto.
+let thumbCache = null;
+let saveTimer = null;
+
+async function loadThumbCache() {
+  if (!thumbCache) thumbCache = (await chrome.storage.local.get("thumbs")).thumbs ?? {};
+  return thumbCache;
+}
+
+async function rememberThumb(url, thumb) {
+  const cache = await loadThumbCache();
+  cache[url] = thumb;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const live = new Set((await chrome.tabs.query({})).map((tab) => tab.url));
+    thumbCache = pruneThumbCache(thumbCache, live);
+    chrome.storage.local.set({ thumbs: thumbCache }).catch(() => {});
+  }, 2000);
+}
+
+async function resendThumbs() {
+  const cache = await loadThumbCache();
+  for (const message of thumbsToResend(cache, await chrome.tabs.query({ windowType: "normal" }))) post(message);
+}
+
 async function onCommand(message) {
   if (message.type === "hello") {
     sendTabs();
+    setTimeout(resendThumbs, 400); // depois da lista de abas, para o app já conhecer os ids
     for (const window of await chrome.windows.getAll()) scheduleCapture(window.id, 50);
     for (const tab of await chrome.tabs.query({ url: "https://music.youtube.com/*" })) {
       chrome.tabs.sendMessage(tab.id, { action: "report" }).catch(() => {});
