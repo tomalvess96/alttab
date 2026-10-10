@@ -4,7 +4,26 @@
   "version": "0.1.0",
   "description": "Abas e miniaturas para o alternador Option+Tab.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwBBCWWI0FTRe4+91A3amXgjubmqnrE9B3XgfzXAV7/fYjqJy+Epqfhbf+AxFQ2ijljmt6UqPSgto9WpZ8x8xutMNnt/bOgEoW4l7FiK5j4FHD9v/cx3DR5kcApfUbIYK4VOLVAD21Fz9Ku2k7wdhJoKTHbgJNgRzeF/0WDwrDDZuP7QoRhykWK2Ee/RkUGS2YDMYFRd9w5g/e14G54yKWK7LRZkmon8+Bqr11dQYrKp87mj+O9lc1EyZeg4N4gMHRpQI8EMCU2QBNUtIHC1UZ/OP3ua9695WarvLT+myPevz06VYfRf3zXMsIhgpQbE2lMO8aEo2MNtNBi4kuV+pKQIDAQAB",
-  "permissions": ["tabs", "nativeMessaging"],
-  "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "background.js", "type": "module" }
+  "permissions": [
+    "tabs",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://music.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

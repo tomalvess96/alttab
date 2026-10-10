@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tabPayload, tabsMessage, thumbSize, capturable } from "./lib.js";
+import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey } from "./lib.js";
 
 test("tabPayload normaliza campos que o Chromium pode omitir", () => {
   assert.deepEqual(tabPayload({ id: 3, windowId: 1, active: true }), {
@@ -29,4 +29,19 @@ test("capturable recusa páginas internas e vazias", () => {
   assert.equal(capturable("edge://newtab/"), false);
   assert.equal(capturable("about:blank"), false);
   assert.equal(capturable(undefined), false);
+});
+
+test("pickArtwork escolhe a maior capa declarada", () => {
+  assert.equal(pickArtwork([{ src: "a", sizes: "60x60" }, { src: "b", sizes: "544x544" }, { src: "c", sizes: "226x226" }]), "b");
+  assert.equal(pickArtwork([{ src: "só" }]), "só");
+  assert.equal(pickArtwork([]), null);
+  assert.equal(pickArtwork(undefined), null);
+});
+
+test("mediaKey ignora frações de segundo para não repetir aviso", () => {
+  const base = { title: "t", artist: "a", album: "", artworkUrl: null, playing: true, duration: 200 };
+  assert.equal(mediaKey({ ...base, position: 10.2 }), mediaKey({ ...base, position: 10.9 }));
+  assert.notEqual(mediaKey({ ...base, position: 10.2 }), mediaKey({ ...base, position: 11.1 }));
+  assert.notEqual(mediaKey({ ...base, position: 10 }), mediaKey({ ...base, playing: false, position: 10 }));
+  assert.equal(mediaKey(null), "null");
 });
