@@ -15,7 +15,9 @@ public struct SwitcherModel: Equatable, Sendable {
     public init(windows: [WindowItem], currentWorkspace: String) {
         self.windows = windows
         self.currentWorkspace = currentWorkspace
-        selectedID = windows.count > 1 ? windows[1].id : windows.first?.id
+        // Option+Tab rápido vai para a janela anterior — pula as outras abas da janela atual.
+        let current = windows.first?.windowKey
+        selectedID = windows.dropFirst().first { $0.windowKey != current }?.id ?? windows.first?.id
     }
 
     public var visible: [WindowItem] {
@@ -118,7 +120,8 @@ public struct SwitcherModel: Equatable, Sendable {
     public static func matches(_ item: WindowItem, query: String) -> Bool {
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return true }
-        return [item.displayTitle, item.appName].contains { $0.range(of: q, options: searchOptions) != nil }
+        return [item.displayTitle, item.appName, item.tab?.host ?? ""]
+            .contains { $0.range(of: q, options: searchOptions) != nil }
     }
 
     public static func highlight(in text: String, query: String) -> Range<String.Index>? {
