@@ -10,10 +10,48 @@ final class BrowserStore {
     private(set) var thumbnails: [Int: CGImage] = [:]
     private(set) var capturedAt: [Int: Date] = [:]
     private(set) var connected = false
+    private(set) var media: [Int: MediaState] = [:]
+    private(set) var mediaReceivedAt: [Int: Date] = [:]
+    private(set) var artwork: [String: CGImage] = [:]
+    private(set) var artworkColor: [String: AlbumColor.RGB] = [:]
+    @ObservationIgnored private var artworkLoading: Set<String> = []
+
+    /// A que está tocando; se nenhuma toca, a última que mudou.
+    var currentMedia: MediaState? {
+        let all = media.values
+        return all.first(where: \.playing) ?? all.max { (mediaReceivedAt[$0.tabId] ?? .distantPast) < (mediaReceivedAt[$1.tabId] ?? .distantPast) }
+    }
+
+    func setMedia(tabId: Int, state: MediaState?) {
+        media[tabId] = state
+        mediaReceivedAt[tabId] = state == nil ? nil : .now
+        if let url = state?.artworkUrl { loadArtwork(url) }
+    }
+
+    private func loadArtwork(_ url: String) {
+        guard artwork[url] == nil, !artworkLoading.contains(url), let address = SafeRemoteURL.make(url, allowedHostSuffixes: SafeRemoteURL.artworkHosts) else { return }
+        artworkLoading.insert(url)
+        Task {
+            defer { artworkLoading.remove(url) }
+            guard let (data, _) = try? await ArtworkSession.shared.data(from: address) else { return }
+            let decoded = await Task.detached { () -> (CGImage, AlbumColor.RGB)? in
+                guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+                      let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+                return (image, AlbumColor.clamped(AlbumColor.dominant(in: image)))
+            }.value
+            guard let (image, color) = decoded else { return }
+            artwork[url] = image
+            artworkColor[url] = color
+        }
+    }
 
     func connectionChanged(_ isConnected: Bool) {
         connected = isConnected
-        if !isConnected { tabs = [] }
+        if !isConnected {
+            tabs = []
+            media = [:]
+            mediaReceivedAt = [:]
+        }
     }
 
     func setTabs(_ newTabs: [BrowserTab]) {
@@ -95,8 +133,26 @@ final class BrowserBridge: @unchecked Sendable {
             nonisolated(unsafe) let decoded = image
             let date = Date(timeIntervalSince1970: capturedAt / 1000)
             onMain { $0.setThumbnail(tabId: tabId, image: decoded, at: date) }
-        case .hello, .activate, .close, .media, .mediaControl:
+        case let .media(tabId, state):
+            onMain { $0.setMedia(tabId: tabId, state: state) }
+        case .hello, .activate, .close, .mediaControl:
             break
         }
+    }
+}
+
+/// Download da capa: recusa redirecionamento para fora da lista fechada de domínios.
+final class ArtworkSession: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    static let shared = ArtworkSession()
+    private lazy var session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: nil)
+
+    func data(from url: URL) async throws -> (Data, URLResponse) {
+        try await session.data(from: url)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest) async -> URLRequest? {
+        guard let url = request.url, SafeRemoteURL.isAllowed(url, allowedHostSuffixes: SafeRemoteURL.artworkHosts) else { return nil }
+        return request
     }
 }
