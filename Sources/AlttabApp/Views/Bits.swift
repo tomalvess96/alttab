@@ -88,7 +88,7 @@ struct TabIcon: View {
     let size: CGFloat
 
     var body: some View {
-        AsyncImage(url: tab.favIconURL.flatMap(URL.init(string:))) { phase in
+        AsyncImage(url: SafeRemoteURL.make(tab.favIconURL)) { phase in
             if let image = phase.image {
                 image.resizable().interpolation(.high)
             } else {
