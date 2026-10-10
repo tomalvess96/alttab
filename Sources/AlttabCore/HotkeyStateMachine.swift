@@ -30,6 +30,13 @@ public struct HotkeyStateMachine: Sendable {
         queryLength = 0
     }
 
+    /// Confere o Option com o estado real do teclado (cada evento traz os modificadores).
+    /// Se o "Option solto" se perdeu, age como se ele tivesse chegado agora.
+    public mutating func syncOption(held: Bool) -> [SwitcherAction] {
+        guard optionHeld != held else { return [] }
+        return handle(held ? .optionDown : .optionUp).actions
+    }
+
     public mutating func handle(_ input: KeyInput) -> (actions: [SwitcherAction], swallow: Bool) {
         switch input {
         case .optionDown:

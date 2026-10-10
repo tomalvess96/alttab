@@ -14,6 +14,7 @@ final class WindowStore {
     @ObservationIgnored private let client: AerospaceClient
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var lastFocused: Int?
+    @ObservationIgnored private var polling = false
 
     init(client: AerospaceClient = AerospaceClient()) {
         self.client = client
@@ -42,6 +43,9 @@ final class WindowStore {
     }
 
     private func poll(full: Bool) async {
+        guard !polling else { return }
+        polling = true
+        defer { polling = false }
         let client = self.client
         let result = await Task.detached { () -> Result<(FocusedWindow?, String, [WindowItem]?), Error> in
             Result {

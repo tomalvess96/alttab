@@ -5,6 +5,10 @@ import AppKit
 final class HotkeyMonitor {
     /// Recebe a tecla traduzida e devolve se o evento deve ser engolido.
     var onInput: ((KeyInput) -> Bool)?
+    /// Estado real do Option, lido de cada evento de tecla (cobre um "Option solto" perdido).
+    var onOptionSync: ((Bool) -> Void)?
+    /// Com o painel fechado, só o Tab interessa: o resto passa sem trabalho nenhum.
+    var isSwitcherOpen: () -> Bool = { false }
     private var tap: CFMachPort?
     private var optionWasHeld = false
 
@@ -25,6 +29,9 @@ final class HotkeyMonitor {
 
     fileprivate func reenable() {
         if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+        let held = CGEventSource.flagsState(.combinedSessionState).contains(.maskAlternate)
+        optionWasHeld = held
+        onOptionSync?(held)
     }
 
     fileprivate func process(type: CGEventType, event: CGEvent) -> Bool {
@@ -41,7 +48,13 @@ final class HotkeyMonitor {
             return nil
         }
         guard type == .keyDown else { return nil }
+        let held = event.flags.contains(.maskAlternate)
+        if held != optionWasHeld {
+            optionWasHeld = held
+            onOptionSync?(held)
+        }
         let code = event.getIntegerValueField(.keyboardEventKeycode)
+        guard code == 48 || isSwitcherOpen() else { return nil }
         switch code {
         case 48: return .tab(shift: event.flags.contains(.maskShift))
         case 123: return .left

@@ -144,3 +144,31 @@ private func w(_ id: Int, _ ws: String, _ title: String = "", app: String = "War
         #expect(m.columns.isEmpty)
     }
 }
+
+@Suite struct SwitcherModelUpdateTests {
+    private func w(_ id: Int, _ ws: String) -> WindowItem {
+        WindowItem(id: id, pid: 1, appName: "Warp", bundleID: nil, title: "janela \(id)", workspace: ws)
+    }
+
+    @Test func updateKeepsSelectionAndQuery() {
+        var m = SwitcherModel(windows: [w(1, "1"), w(2, "1"), w(3, "2")], currentWorkspace: "1")
+        m.setQuery("janela")
+        m.select(3)
+        m.update(windows: [w(1, "1"), w(3, "2"), w(4, "2")])
+        #expect(m.selectedID == 3)
+        #expect(m.query == "janela")
+        #expect(m.windows.map(\.id) == [1, 3, 4])
+    }
+
+    @Test func updateDroppingSelectedMovesToNeighbor() {
+        var m = SwitcherModel(windows: [w(1, "1"), w(2, "1"), w(3, "2")], currentWorkspace: "1")
+        m.update(windows: [w(1, "1"), w(3, "2")])
+        #expect(m.selectedID == 3)
+    }
+
+    @Test func updateToEmptyClearsSelection() {
+        var m = SwitcherModel(windows: [w(1, "1"), w(2, "1")], currentWorkspace: "1")
+        m.update(windows: [])
+        #expect(m.selectedID == nil)
+    }
+}

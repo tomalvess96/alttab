@@ -22,6 +22,8 @@ final class SwitcherController {
     private var hoverGate = HoverGate()
     private var panel: SwitcherPanel?
     private var panelWidth: CGFloat = 1232
+    /// Clique em qualquer outro app fecha o painel (inclusive no modo fixo de busca).
+    private var outsideClick: Any?
 
     init(store: WindowStore, thumbs: WindowThumbs) {
         self.store = store
@@ -31,10 +33,23 @@ final class SwitcherController {
         }
     }
 
+    var isOpen: Bool { machine.isOpen }
+
+    /// Chamado de dentro do tap de teclado: decide se engole e adia o trabalho de tela,
+    /// para o callback nunca segurar a digitação do sistema.
     func handle(_ input: KeyInput) -> Bool {
         let (actions, swallow) = machine.handle(input)
-        actions.forEach(perform)
+        schedule(actions)
         return swallow
+    }
+
+    func syncOption(held: Bool) {
+        schedule(machine.syncOption(held: held))
+    }
+
+    private func schedule(_ actions: [SwitcherAction]) {
+        guard !actions.isEmpty else { return }
+        DispatchQueue.main.async { [weak self] in actions.forEach { self?.perform($0) } }
     }
 
     private func perform(_ action: SwitcherAction) {
@@ -73,7 +88,14 @@ final class SwitcherController {
         thumbs.capture(ids: state.model.windows.map(\.id)) { [weak self] id, image in
             self?.state.thumbnails[id] = image
         }
-        Task { await store.refresh() }
+        Task {
+            await store.refresh()
+            guard machine.isOpen else { return }
+            state.model.update(windows: store.mruOrdered)
+        }
+        outsideClick = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            MainActor.assumeIsolated { self?.hide() }
+        }
     }
 
     private func commit() {
@@ -94,6 +116,8 @@ final class SwitcherController {
     private func hide() {
         machine.close()
         panel?.dismiss()
+        if let outsideClick { NSEvent.removeMonitor(outsideClick) }
+        outsideClick = nil
     }
 
     func hover(_ id: Int) {
