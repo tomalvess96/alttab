@@ -21,3 +21,15 @@
 - Mouse (Tom): inclinação/brilho, seleção parada com mouse parado, clique e X — tudo ok.
 - `alt-tab = 'workspace-back-and-forth'` removido do `~/.aerospace.toml` (linha 159) com backup em `~/.aerospace.toml.bak-alttab`; `aerospace reload-config` ok.
 - Não testados: AeroSpace parado e aviso de Secure Input.
+
+## Checklist dos Planos 2 e 3 (10/out, com o Tom)
+- Extensão carregada (ID `npgoecidghckmkdhakalhchnaebjdhlc`); menu mostra "Edge: N abas · M com foto".
+- Abas do Edge no alternador com miniatura, ícone e áudio — ok. Miniaturas guardadas na sessão do Edge: após reiniciar o app, 4/4 com foto.
+- Mouse: seleciona exatamente o cartão embaixo — ok após dois achados:
+  1. cartões cresciam ao ganhar foco (58→112 pt) e o selecionado descia para fora do ponteiro;
+  2. inclinação 3D com perspectiva projetava a área de toque até ~230 pt fora do cartão (medido com registro temporário).
+- Player do YouTube Music: pílula, cor da capa, tocar/pausar, próxima/anterior — ok. O YouTube Music trocou `ytmusic-player-bar` por `ytmusic-wiz-player-controls`; botões achados pelo aria-label exato ("Avançar", não "Avançar 30 segundos"). Ao recarregar a extensão o content script da aba aberta fica órfão → extensão reinjeta.
+- Clique na pílula abre a aba da música; capa ampliada com progresso e controles — entregue.
+- Option+Tab parou de abrir uma vez até reiniciar o app; na mesma hora o painel escondido mantinha animações vivas (25% de CPU, tap com 176 ms de latência). Corrigido (0,4%); não voltou a acontecer com registro ligado. Causa exata não confirmada.
+- Instalação reinicia o alttab-host: um host antigo com o binário trocado é recusado pela verificação de assinatura.
+- Limitações conhecidas: painel não aparece sobre jogo em tela cheia; aba nunca vista desde que o Edge abriu fica sem foto até ser vista; um perfil do Edge por vez.
