@@ -26,3 +26,19 @@ export function thumbSize(width, height, maxWidth = 480) {
 export function capturable(url) {
   return /^(https?|file):/.test(url ?? "");
 }
+
+/** Maior imagem declarada em `MediaMetadata.artwork` (sizes "LxA"). */
+export function pickArtwork(list) {
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const area = (a) => {
+    const [w, h] = String(a.sizes ?? "0x0").split("x").map(Number);
+    return (w || 0) * (h || 0);
+  };
+  return [...list].sort((a, b) => area(b) - area(a))[0].src ?? null;
+}
+
+/** Chave para só avisar o app quando algo visível mudou (posição em segundos inteiros). */
+export function mediaKey(state) {
+  if (!state) return "null";
+  return JSON.stringify({ ...state, position: Math.floor(state.position ?? 0) });
+}

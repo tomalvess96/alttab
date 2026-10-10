@@ -67,6 +67,9 @@ async function onCommand(message) {
   if (message.type === "hello") {
     sendTabs();
     for (const window of await chrome.windows.getAll()) scheduleCapture(window.id, 50);
+    for (const tab of await chrome.tabs.query({ url: "https://music.youtube.com/*" })) {
+      chrome.tabs.sendMessage(tab.id, { action: "report" }).catch(() => {});
+    }
   } else if (message.type === "activate") {
     try {
       const tab = await chrome.tabs.update(message.tabId, { active: true });
@@ -74,6 +77,8 @@ async function onCommand(message) {
     } catch {}
   } else if (message.type === "close") {
     chrome.tabs.remove(message.tabId).catch(() => {});
+  } else if (message.type === "mediaControl") {
+    chrome.tabs.sendMessage(message.tabId, { action: message.action }).catch(() => {});
   }
 }
 
@@ -93,4 +98,10 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId !== chrome.windows.WINDOW_ID_NONE) scheduleCapture(windowId);
 });
 chrome.runtime.onStartup.addListener(() => {});
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type !== "media" || !sender.tab) return;
+  const tabId = sender.tab.id;
+  post({ type: "media", tabId, media: message.media ? { tabId, ...message.media } : null });
+});
+chrome.tabs.onRemoved.addListener((tabId) => post({ type: "media", tabId, media: null }));
 connect();
