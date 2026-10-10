@@ -7,20 +7,21 @@ import Testing
         var g = HoverGate()
         g.reset(x: 100, y: 100)
         let same = g.shouldSelect(x: 100, y: 100)
-        let tiny = g.shouldSelect(x: 105, y: 103)
+        let jitter = g.shouldSelect(x: 101, y: 101)
         #expect(!same)
-        #expect(!tiny)
+        #expect(!jitter)
     }
 
-    @Test func realMovementSelectsAndMovesAnchor() {
+    @Test func smallRealMoveIntoNeighborSelects() {
+        // Passar do cartão para o vizinho atravessando o espaço de 9 pt entre eles.
         var g = HoverGate()
         g.reset(x: 0, y: 0)
-        let first = g.shouldSelect(x: 20, y: 0)
-        let nudge = g.shouldSelect(x: 25, y: 0)
-        let second = g.shouldSelect(x: 40, y: 0)
+        let first = g.shouldSelect(x: 5, y: 0)
+        let layoutShiftUnderStillMouse = g.shouldSelect(x: 5, y: 0)
+        let next = g.shouldSelect(x: 9, y: 0)
         #expect(first)
-        #expect(!nudge)
-        #expect(second)
+        #expect(!layoutShiftUnderStillMouse)
+        #expect(next)
     }
 
     @Test func withoutResetFirstMoveSelects() {

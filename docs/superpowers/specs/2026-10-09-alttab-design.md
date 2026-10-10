@@ -40,7 +40,7 @@ estar nela — mais rápido que trocar de workspace no AeroSpace e caçar a aba 
 | **Option+W** | Fecha a janela/aba selecionada (só enquanto nada foi digitado; depois W vira letra da busca) |
 | Soltar Option | Vai para a seleção e fecha o painel (se nada foi digitado) |
 | Esc | Fecha o painel sem trocar |
-| Mouse | Passar por cima seleciona (só com movimento real ≥14 px); clique escolhe |
+| Mouse | Passar por cima seleciona (só com movimento real do mouse, ≥3 pt: mouse parado não troca a seleção); clique escolhe |
 
 Option+Tab rápido (apertar e soltar) = volta para a janela anterior — substitui o
 `alt-tab = 'workspace-back-and-forth'` do AeroSpace, que será **removido na instalação**.
