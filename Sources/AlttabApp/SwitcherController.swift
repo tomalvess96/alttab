@@ -10,6 +10,18 @@ final class SwitcherState {
     var closingID: Int?
     /// Muda a cada abertura para reiniciar as animações de entrada.
     var openCount = 0
+
+    /// Fonte das abas do Edge (miniaturas e "visto há" chegam ao vivo enquanto o painel está aberto).
+    var browser: BrowserStore?
+
+    func thumbnail(for item: WindowItem) -> CGImage? {
+        if let tab = item.tab { return browser?.thumbnails[tab.tabId] }
+        return thumbnails[item.id]
+    }
+
+    func capturedAt(for item: WindowItem) -> Date? {
+        item.tab.flatMap { browser?.capturedAt[$0.tabId] }
+    }
 }
 
 @MainActor
@@ -36,6 +48,16 @@ final class SwitcherController {
         store.onFocusChange = { [weak thumbs] id in
             thumbs?.capture(ids: [id]) { _, _ in }
         }
+        state.browser = browser
+    }
+
+    /// Janelas do AeroSpace com as janelas do Edge trocadas pelas abas (se a extensão estiver ligada).
+    private func currentItems() -> [WindowItem] {
+        browser.connected ? TabComposer.compose(windows: store.mruOrdered, tabs: browser.tabs) : store.mruOrdered
+    }
+
+    func select(_ id: Int) {
+        state.model.select(id)
     }
 
     var isOpen: Bool { machine.isOpen }
@@ -76,27 +98,28 @@ final class SwitcherController {
     }
 
     private func open() {
-        state.model = SwitcherModel(windows: store.mruOrdered, currentWorkspace: store.currentWorkspace)
+        state.model = SwitcherModel(windows: currentItems(), currentWorkspace: store.currentWorkspace)
         state.thumbnails = thumbs.cache
         state.closingID = nil
         state.openCount += 1
         let mouse = NSEvent.mouseLocation
         hoverGate.reset(x: mouse.x, y: mouse.y)
 
-        let screenWidth = NSScreen.main?.visibleFrame.width ?? 1280
-        panelWidth = min(1232, screenWidth - 48)
+        let visible = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1280, height: 800)
+        panelWidth = min(1232, visible.width - 48)
+        let panelHeight = min(visible.height - 80, 720)
         if panel == nil {
-            panel = SwitcherPanel(rootView: SwitcherView(state: state, controller: self, width: panelWidth))
+            panel = SwitcherPanel(rootView: SwitcherView(state: state, controller: self, width: panelWidth, height: panelHeight))
         }
-        panel?.present(width: panelWidth)
+        panel?.present(width: panelWidth, height: panelHeight)
 
-        thumbs.capture(ids: state.model.windows.map(\.id)) { [weak self] id, image in
+        thumbs.capture(ids: state.model.windows.filter { $0.tab == nil }.map(\.id)) { [weak self] id, image in
             self?.state.thumbnails[id] = image
         }
         Task {
             await store.refresh()
             guard machine.isOpen else { return }
-            state.model.update(windows: store.mruOrdered)
+            state.model.update(windows: currentItems())
         }
         outsideClick = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             MainActor.assumeIsolated { self?.hide() }
@@ -104,14 +127,16 @@ final class SwitcherController {
     }
 
     private func commit() {
-        let id = state.model.selectedID
+        let item = state.model.selected
         hide()
-        guard let id else { return }
-        store.noteFocused(id)
+        guard let item else { return }
+        store.noteFocused(item.windowKey)
+        if let tab = item.tab { bridge.send(.activate(tabId: tab.tabId)) }
         let client = self.client
+        let windowID = item.windowKey
         Task.detached {
             do {
-                try client.focus(windowID: id)
+                try client.focus(windowID: windowID)
             } catch {
                 await self.store.refresh()
             }
@@ -137,10 +162,15 @@ final class SwitcherController {
     }
 
     func closeWindow(_ id: Int) {
+        guard let item = state.model.windows.first(where: { $0.id == id }) else { return }
         state.closingID = id
-        let client = self.client
+        if let tab = item.tab {
+            bridge.send(.close(tabId: tab.tabId))
+        } else {
+            let client = self.client
+            Task.detached { try? client.close(windowID: id) }
+        }
         Task {
-            _ = await Task.detached { try? client.close(windowID: id) }.value
             try? await Task.sleep(for: .milliseconds(240))
             state.model.remove(id)
             state.closingID = nil
