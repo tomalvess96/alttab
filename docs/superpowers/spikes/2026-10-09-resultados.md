@@ -18,4 +18,6 @@
 - Acessibilidade herdada entre builds (mesma assinatura). Gravação de Tela: o app **só entra na lista de Ajustes depois de chamar `CGRequestScreenCaptureAccess()`** — antes disso não há o que ligar.
 - Miniaturas: aparecem para as 14 janelas, inclusive de workspaces escondidos; coluna em foco com miniatura grande.
 - Option+Tab de ponta a ponta confirmado pelo Tom.
-- Pendentes (Tom): inclinação/brilho e clique com o mouse, X fechando, AeroSpace parado, Secure Input, remoção do `alt-tab` do AeroSpace.
+- Mouse (Tom): inclinação/brilho, seleção parada com mouse parado, clique e X — tudo ok.
+- `alt-tab = 'workspace-back-and-forth'` removido do `~/.aerospace.toml` (linha 159) com backup em `~/.aerospace.toml.bak-alttab`; `aerospace reload-config` ok.
+- Não testados: AeroSpace parado e aviso de Secure Input.
