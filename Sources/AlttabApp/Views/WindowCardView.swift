@@ -25,7 +25,7 @@ struct WindowCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             thumb
-                .frame(height: thumbHeight ?? (isWide ? 112 : 58))
+                .frame(height: thumbHeight ?? CGFloat(ColumnLayout.cardThumbPreferred))
                 .clipShape(.rect(cornerRadius: Theme.thumbRadius))
                 .overlay(alignment: .bottomTrailing) {
                     if let ago = Ago.text(capturedAt) { AgoBadge(text: ago).padding(5) }

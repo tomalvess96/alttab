@@ -30,8 +30,10 @@ final class SwitcherState {
         return max(120, Double(panelHeight) - 48 - 40 - 60 - 20 - 31 - player)
     }
 
+    /// `wide` é ignorado de propósito: altura igual em foco ou não, senão o cartão selecionado pelo
+    /// mouse desce ao abrir a coluna e sai de baixo do ponteiro.
     func cardThumbHeight(count: Int, wide: Bool) -> CGFloat {
-        CGFloat(ColumnLayout.cardThumbHeight(count: count, preferred: wide ? 112 : 58, available: cardsHeight))
+        CGFloat(ColumnLayout.cardThumbHeight(count: count, preferred: ColumnLayout.cardThumbPreferred, available: cardsHeight))
     }
 
     func thumbnail(for item: WindowItem) -> CGImage? {

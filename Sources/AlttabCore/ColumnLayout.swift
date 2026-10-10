@@ -16,6 +16,8 @@ public enum ColumnLayout {
     /// Altura do cartão além da miniatura: margens, rótulo, borda e espaço até o próximo.
     public static let cardChrome = 49.0
     public static let minCardThumb = 24.0
+    /// Mesma altura de miniatura com ou sem foco: a coluna em foco só fica mais larga.
+    public static let cardThumbPreferred = 72.0
 
     /// Miniatura do cartão: o tamanho preferido, encolhendo para todos os cartões da coluna caberem na altura.
     public static func cardThumbHeight(count: Int, preferred: Double, available: Double) -> Double {
