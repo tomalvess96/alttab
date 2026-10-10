@@ -21,11 +21,17 @@ final class AppLink: @unchecked Sendable {
         socket = newSocket
         lock.unlock()
     }
+    /// Escreve com o lock: o socket não fecha no meio da escrita.
     func send(_ payload: Data) {
         lock.lock()
-        let current = socket
+        defer { lock.unlock() }
+        try? socket?.write(NativeMessageCodec.frame(payload))
+    }
+    func closeCurrent(_ target: UnixSocket) {
+        lock.lock()
+        if socket === target { socket = nil }
+        target.close()
         lock.unlock()
-        try? current?.write(NativeMessageCodec.frame(payload))
     }
 }
 
@@ -40,14 +46,19 @@ func runHost() -> Never {
                 Thread.sleep(forTimeInterval: 1)
                 continue
             }
+            // Só entrega abas e miniaturas ao app Alttab assinado pelo mesmo time.
+            guard PeerIdentity.verify(fd: socket.fd, requirement: PeerIdentity.appRequirement) else {
+                socket.close()
+                Thread.sleep(forTimeInterval: 5)
+                continue
+            }
             app.set(socket)
             browser.send(hello) // a extensão reenvia abas e miniaturas
             var reader = NativeMessageCodec.Reader()
             while let chunk = try? socket.read(), !chunk.isEmpty {
                 reader.append(chunk).forEach(browser.send)
             }
-            app.set(nil)
-            socket.close()
+            app.closeCurrent(socket)
             Thread.sleep(forTimeInterval: 1)
         }
     }

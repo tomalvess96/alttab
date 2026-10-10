@@ -35,8 +35,7 @@ final class BrowserStore {
             defer { artworkLoading.remove(url) }
             guard let (data, _) = try? await ArtworkSession.shared.data(from: address) else { return }
             let decoded = await Task.detached { () -> (CGImage, AlbumColor.RGB)? in
-                guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-                      let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+                guard let image = SafeImage.decode(data, maxPixelSize: 600) else { return nil }
                 return (image, AlbumColor.clamped(AlbumColor.dominant(in: image)))
             }.value
             guard let (image, color) = decoded else { return }
@@ -83,12 +82,18 @@ final class BrowserBridge: @unchecked Sendable {
         thread.start()
     }
 
+    /// Fila própria: escrever no socket pode bloquear (Edge parado) e nunca pode prender a thread
+    /// principal, que é a mesma do tap de teclado.
+    private let sendQueue = DispatchQueue(label: "alttab.browser-bridge.send")
+
     func send(_ message: BrowserMessage) {
         guard let data = try? message.encode() else { return }
-        lock.lock()
-        let current = client
-        lock.unlock()
-        try? current?.write(NativeMessageCodec.frame(data))
+        sendQueue.async { [self] in
+            // Escreve com o lock: o socket não pode ser fechado (e o número reaproveitado) no meio da escrita.
+            lock.lock()
+            defer { lock.unlock() }
+            try? client?.write(NativeMessageCodec.frame(data))
+        }
     }
 
     private func onMain(_ work: @escaping @MainActor (BrowserStore) -> Void) {
@@ -97,10 +102,21 @@ final class BrowserBridge: @unchecked Sendable {
     }
 
     private func serve() {
-        try? FileManager.default.createDirectory(at: BridgePaths.directory, withIntermediateDirectories: true)
-        guard let server = try? UnixSocket.listen(path: BridgePaths.socket) else { return }
+        try? BridgePaths.prepareDirectory()
+        guard let server = try? UnixSocket.listen(path: BridgePaths.socket) else {
+            NSLog("Alttab: não consegui abrir o socket da ponte em %@", BridgePaths.socket)
+            return
+        }
         while true {
-            guard let connection = try? server.accept() else { continue }
+            guard let connection = try? server.accept() else {
+                Thread.sleep(forTimeInterval: 0.5) // erro permanente (ex.: sem descritores) não vira 100% de CPU
+                continue
+            }
+            // Só o alttab-host assinado pelo mesmo time conversa com o app.
+            guard PeerIdentity.verify(fd: connection.fd, requirement: PeerIdentity.hostRequirement) else {
+                connection.close()
+                continue
+            }
             lock.lock()
             client?.close()
             client = connection
@@ -115,8 +131,8 @@ final class BrowserBridge: @unchecked Sendable {
             lock.lock()
             let wasCurrent = client === connection
             if wasCurrent { client = nil }
-            lock.unlock()
             connection.close()
+            lock.unlock()
             if wasCurrent { onMain { $0.connectionChanged(false) } }
         }
     }
@@ -127,9 +143,8 @@ final class BrowserBridge: @unchecked Sendable {
         case .tabs(let tabs):
             onMain { $0.setTabs(tabs) }
         case let .thumb(tabId, jpeg, capturedAt):
-            guard let data = Data(base64Encoded: jpeg),
-                  let source = CGImageSourceCreateWithData(data as CFData, nil),
-                  let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return }
+            guard let data = Data(base64Encoded: jpeg), let image = SafeImage.decode(data, maxPixelSize: 480) else { return }
+            // CGImage é imutável; passar para a main é seguro.
             nonisolated(unsafe) let decoded = image
             let date = Date(timeIntervalSince1970: capturedAt / 1000)
             onMain { $0.setThumbnail(tabId: tabId, image: decoded, at: date) }
@@ -144,7 +159,12 @@ final class BrowserBridge: @unchecked Sendable {
 /// Download da capa: recusa redirecionamento para fora da lista fechada de domínios.
 final class ArtworkSession: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     static let shared = ArtworkSession()
-    private lazy var session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: nil)
+    private var session: URLSession!
+
+    override init() {
+        super.init()
+        session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: nil)
+    }
 
     func data(from url: URL) async throws -> (Data, URLResponse) {
         try await session.data(from: url)
