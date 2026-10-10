@@ -15,6 +15,7 @@ final class BrowserStore {
     private(set) var artwork: [String: CGImage] = [:]
     private(set) var artworkColor: [String: AlbumColor.RGB] = [:]
     @ObservationIgnored private var artworkLoading: Set<String> = []
+    @ObservationIgnored private var artworkFailedAt: [String: Date] = [:]
 
     /// A que está tocando; se nenhuma toca, a última que mudou.
     var currentMedia: MediaState? {
@@ -25,20 +26,32 @@ final class BrowserStore {
     func setMedia(tabId: Int, state: MediaState?) {
         media[tabId] = state
         mediaReceivedAt[tabId] = state == nil ? nil : .now
+        let inUse = Set(media.values.compactMap(\.artworkUrl))
+        artwork = ArtworkCachePolicy.pruned(artwork, keeping: inUse)
+        artworkColor = ArtworkCachePolicy.pruned(artworkColor, keeping: inUse)
+        artworkFailedAt = ArtworkCachePolicy.pruned(artworkFailedAt, keeping: inUse)
         if let url = state?.artworkUrl { loadArtwork(url) }
     }
 
     private func loadArtwork(_ url: String) {
-        guard artwork[url] == nil, !artworkLoading.contains(url), let address = SafeRemoteURL.make(url, allowedHostSuffixes: SafeRemoteURL.artworkHosts) else { return }
+        guard ArtworkCachePolicy.shouldFetch(cached: artwork[url] != nil, loading: artworkLoading.contains(url),
+                                             lastFailure: artworkFailedAt[url], now: .now),
+              let address = SafeRemoteURL.make(url, allowedHostSuffixes: SafeRemoteURL.artworkHosts) else { return }
         artworkLoading.insert(url)
         Task {
             defer { artworkLoading.remove(url) }
-            guard let (data, _) = try? await ArtworkSession.shared.data(from: address) else { return }
+            guard let (data, _) = try? await ArtworkSession.shared.data(from: address) else {
+                artworkFailedAt[url] = .now
+                return
+            }
             let decoded = await Task.detached { () -> (CGImage, AlbumColor.RGB)? in
                 guard let image = SafeImage.decode(data, maxPixelSize: 600) else { return nil }
                 return (image, AlbumColor.clamped(AlbumColor.dominant(in: image)))
             }.value
-            guard let (image, color) = decoded else { return }
+            guard let (image, color) = decoded else {
+                artworkFailedAt[url] = .now
+                return
+            }
             artwork[url] = image
             artworkColor[url] = color
         }
