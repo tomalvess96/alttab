@@ -37,6 +37,7 @@ estar nela — mais rápido que trocar de workspace no AeroSpace e caçar a aba 
 | ↑ ↓ | Janela ou aba dentro do workspace |
 | 1–9 | Pula para o workspace (enquanto nada foi digitado; depois entra na busca) |
 | Digitar qualquer letra | Filtra; o painel fica **fixo** (soltar Option não confirma mais — Enter confirma, Esc cancela) |
+| **/** ou **espaço** | Ativa a busca (painel fixo, cursor piscando) sem precisar do mouse |
 | **Option+W** | Fecha a janela/aba selecionada (só enquanto nada foi digitado; depois W vira letra da busca) |
 | Soltar Option | Vai para a seleção e fecha o painel (se nada foi digitado) |
 | Esc | Fecha o painel sem trocar |

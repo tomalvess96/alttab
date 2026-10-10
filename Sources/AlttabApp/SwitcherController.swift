@@ -140,6 +140,7 @@ final class SwitcherController {
         case .commit: commit()
         case .cancel: hide()
         case .closeSelected: if let id = state.model.selectedID { closeWindow(id) }
+        case .focusSearch: state.searchFocused = true
         }
     }
 

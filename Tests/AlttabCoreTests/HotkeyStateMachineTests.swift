@@ -157,3 +157,27 @@ import Testing
         #expect(!m.isSticky)
     }
 }
+
+@Suite struct HotkeyStateMachineSearchKeyTests {
+    private func opened() -> HotkeyStateMachine {
+        var m = HotkeyStateMachine()
+        _ = m.handle(.optionDown)
+        _ = m.handle(.tab(shift: false))
+        return m
+    }
+
+    @Test(arguments: ["/", " "])
+    func searchKeyFocusesSearchWithoutTyping(key: String) {
+        var m = opened()
+        #expect(m.handle(.character(key)) == ([.focusSearch], true))
+        #expect(m.isSticky)
+        #expect(m.handle(.optionUp) == ([], false))
+        #expect(m.isOpen)
+    }
+
+    @Test func spaceTypesOnceSearchHasText() {
+        var m = opened()
+        _ = m.handle(.character("a"))
+        #expect(m.handle(.character(" ")) == ([.type(" ")], true))
+    }
+}
