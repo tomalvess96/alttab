@@ -18,5 +18,8 @@ cat > "$HOSTS_DIR/br.inf.brusoft.alttab.json" <<JSON
 }
 JSON
 open "$HOME/Applications/Alttab.app"
+# O alttab-host em execução ficou com o binário antigo: o app recusaria a assinatura dele.
+# Encerrado, a extensão do Edge abre um novo (já com o binário novo) em ~5 s.
+pkill -f "Alttab.app/Contents/MacOS/alttab-host" || true
 echo "instalado em ~/Applications/Alttab.app"
 echo "Extensão: edge://extensions → Modo de desenvolvedor → Carregar sem compactação → $(pwd)/extension"

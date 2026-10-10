@@ -5,7 +5,9 @@ public struct HoverGate: Sendable {
     private var anchor: (x: Double, y: Double)?
     public let minDistance: Double
 
-    public init(minDistance: Double = 14) {
+    /// 3 pt: o bastante para ignorar o mouse parado (painel abrindo, colunas mudando de largura)
+    /// sem atrasar a passagem de um cartão para o vizinho.
+    public init(minDistance: Double = 3) {
         self.minDistance = minDistance
     }
 
