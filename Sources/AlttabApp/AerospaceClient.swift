@@ -1,33 +1,12 @@
 import AlttabCore
 import Foundation
 
-enum AerospaceError: Error, CustomStringConvertible {
-    case failed(args: [String], stderr: String)
-    var description: String {
-        switch self {
-        case let .failed(args, stderr): "aerospace \(args.joined(separator: " ")): \(stderr)"
-        }
-    }
-}
-
 struct AerospaceClient: Sendable {
     var executable = "/opt/homebrew/bin/aerospace"
 
+    /// Prazo curto: se o servidor do AeroSpace travar, a chamada falha em vez de prender a thread.
     func run(_ args: [String]) throws -> Data {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = args
-        let out = Pipe(), err = Pipe()
-        process.standardOutput = out
-        process.standardError = err
-        try process.run()
-        let data = out.fileHandleForReading.readDataToEndOfFile()
-        let errData = err.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw AerospaceError.failed(args: args, stderr: String(decoding: errData, as: UTF8.self))
-        }
-        return data
+        try ProcessRunner.run(executable, args, timeout: 1.5)
     }
 
     func windows() throws -> [WindowItem] {

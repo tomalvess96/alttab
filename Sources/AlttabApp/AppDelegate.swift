@@ -22,6 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             MainActor.assumeIsolated { self?.setIcon(warning: SecureInput.holder() != nil) }
         }
         hotkey.onInput = { [weak self] input in self?.controller.handle(input) ?? false }
+        hotkey.onOptionSync = { [weak self] held in self?.controller.syncOption(held: held) }
+        hotkey.isSwitcherOpen = { [weak self] in self?.controller.isOpen ?? false }
         hotkeyActive = hotkey.start()
         if !hotkeyActive { openAccessibility() }
     }

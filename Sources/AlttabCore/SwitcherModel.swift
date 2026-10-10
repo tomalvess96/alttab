@@ -71,6 +71,22 @@ public struct SwitcherModel: Equatable, Sendable {
         }
     }
 
+    /// Troca a lista por uma mais nova mantendo busca e seleção; se a selecionada sumiu, vai para a vizinha.
+    public mutating func update(windows newWindows: [WindowItem]) {
+        let before = visible
+        let index = before.firstIndex { $0.id == selectedID }
+        windows = newWindows
+        let after = visible
+        guard !after.contains(where: { $0.id == selectedID }) else { return }
+        if after.isEmpty {
+            selectedID = nil
+        } else if let index {
+            selectedID = after[min(index, after.count - 1)].id
+        } else {
+            selectedID = after.first?.id
+        }
+    }
+
     public mutating func remove(_ id: Int) {
         let before = visible
         let index = before.firstIndex { $0.id == id }

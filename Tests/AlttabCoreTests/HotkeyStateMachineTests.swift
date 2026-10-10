@@ -109,3 +109,32 @@ import Testing
         #expect(m.handle(.character("w")) == ([.closeSelected], true))
     }
 }
+
+@Suite struct HotkeyStateMachineSyncTests {
+    private func opened() -> HotkeyStateMachine {
+        var m = HotkeyStateMachine()
+        _ = m.handle(.optionDown)
+        _ = m.handle(.tab(shift: false))
+        return m
+    }
+
+    @Test func missedOptionReleaseCommitsOnSync() {
+        var m = opened()
+        #expect(m.syncOption(held: false) == [.commit])
+        #expect(!m.isOpen)
+        #expect(m.handle(.other) == ([], false))
+    }
+
+    @Test func syncWhileHeldDoesNothing() {
+        var m = opened()
+        #expect(m.syncOption(held: true) == [])
+        #expect(m.isOpen)
+    }
+
+    @Test func syncInStickyModeKeepsPanelOpen() {
+        var m = opened()
+        _ = m.handle(.character("a"))
+        #expect(m.syncOption(held: false) == [])
+        #expect(m.isOpen)
+    }
+}
