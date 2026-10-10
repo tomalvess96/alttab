@@ -4,13 +4,13 @@ import Testing
 
 @Suite struct BrowserMessageTests {
     @Test func decodesTabsFromExtension() throws {
-        let json = #"{"type":"tabs","tabs":[{"id":12,"windowId":3,"title":"Pontes de acesso","url":"https://www.desksoft.brusoft.inf.br/pontes","favIconUrl":null,"active":true,"audible":false,"lastAccessed":1760000000000}]}"#
+        let json = #"{"type":"tabs","tabs":[{"id":12,"windowId":3,"title":"Pontes de acesso","url":"https://www.example.com/pontes","favIconUrl":null,"active":true,"audible":false,"lastAccessed":1760000000000}]}"#
         let message = try BrowserMessage.decode(Data(json.utf8))
         guard case .tabs(let tabs) = message else { Issue.record("não é tabs"); return }
         #expect(tabs == [BrowserTab(id: 12, windowId: 3, title: "Pontes de acesso",
-                                    url: "https://www.desksoft.brusoft.inf.br/pontes", favIconUrl: nil,
+                                    url: "https://www.example.com/pontes", favIconUrl: nil,
                                     active: true, audible: false, lastAccessed: 1_760_000_000_000)])
-        #expect(tabs[0].host == "desksoft.brusoft.inf.br")
+        #expect(tabs[0].host == "example.com")
     }
 
     @Test func decodesThumb() throws {

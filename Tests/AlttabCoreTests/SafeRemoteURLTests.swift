@@ -15,7 +15,7 @@ import Testing
         "https://127.0.0.1.nip.io/x",               // DNS que aponta para a máquina
         "https://googleusercontent.com.evil.com/x", // sufixo no lugar errado
         "https://evilgoogleusercontent.com/x",      // sem o ponto antes do domínio
-        "https://192.168.100.181/x", "https://localhost/x", "file:///etc/passwd", "", "lixo",
+        "https://192.168.1.10/x", "https://localhost/x", "file:///etc/passwd", "", "lixo",
     ])
     func rejectsEverythingElse(_ address: String) {
         #expect(SafeRemoteURL.make(address, allowedHostSuffixes: SafeRemoteURL.artworkHosts) == nil)
