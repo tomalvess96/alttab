@@ -112,7 +112,6 @@ final class SwitcherController {
     /// para o callback nunca segurar a digitação do sistema.
     func handle(_ input: KeyInput) -> Bool {
         let (actions, swallow) = machine.handle(input)
-        DebugLog.write("input=\(DebugLog.kind(input)) actions=\(actions.count) open=\(machine.isOpen) sticky=\(machine.isSticky) panelVisible=\(panel?.isVisible ?? false)")
         schedule(actions)
         return swallow
     }
@@ -145,7 +144,6 @@ final class SwitcherController {
     }
 
     private func open() {
-        DebugLog.write("open() screenMain=\(String(describing: NSScreen.main?.frame))")
         state.model = SwitcherModel(windows: currentItems(), currentWorkspace: store.currentWorkspace)
         state.thumbnails = thumbs.cache
         state.closingID = nil
@@ -196,7 +194,6 @@ final class SwitcherController {
     }
 
     private func hide() {
-        DebugLog.write("hide()")
         machine.close()
         panel?.dismiss()
         state.isVisible = false
@@ -233,26 +230,3 @@ final class SwitcherController {
 }
 
 
-// DEPURAÇÃO TEMPORÁRIA — Option+Tab que para de abrir até reiniciar o app.
-enum DebugLog {
-    static let url = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/alttab-debug.log")
-    /// Só o tipo da tecla, nunca o conteúdo: a busca não pode parar num arquivo de texto.
-    static func kind(_ input: KeyInput) -> String {
-        switch input {
-        case .character: "letra"
-        case .digit: "número"
-        default: String(describing: input)
-        }
-    }
-
-    static func write(_ line: String) {
-        let stamp = Date.now.formatted(.dateTime.hour().minute().second())
-        let data = "\(stamp) \(line)\n".data(using: .utf8)!
-        if let handle = try? FileHandle(forWritingTo: url) {
-            handle.seekToEndOfFile(); handle.write(data); try? handle.close()
-        } else {
-            try? data.write(to: url)
-            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-        }
-    }
-}

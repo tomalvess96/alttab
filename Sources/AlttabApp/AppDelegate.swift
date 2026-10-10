@@ -43,7 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             menu.addItem(disabled("\(store.windows.count) janelas · workspace \(store.currentWorkspace)"))
         }
-        menu.addItem(disabled(browser.connected ? "Edge: \(browser.tabs.count) abas" : "Edge: extensão desconectada"))
+        let withPhoto = browser.tabs.filter { browser.thumbnails[$0.id] != nil }.count
+        menu.addItem(disabled(browser.connected ? "Edge: \(browser.tabs.count) abas · \(withPhoto) com foto" : "Edge: extensão desconectada"))
         if let holder = SecureInput.holder() {
             menu.addItem(disabled("Option+Tab bloqueado: Secure Input ativo em \(holder)"))
         }
