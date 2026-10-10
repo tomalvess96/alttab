@@ -95,7 +95,7 @@ final class BrowserBridge: @unchecked Sendable {
             nonisolated(unsafe) let decoded = image
             let date = Date(timeIntervalSince1970: capturedAt / 1000)
             onMain { $0.setThumbnail(tabId: tabId, image: decoded, at: date) }
-        case .hello, .activate, .close:
+        case .hello, .activate, .close, .media, .mediaControl:
             break
         }
     }
