@@ -3,9 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key><string>br.inf.brusoft.alttab</string>
-    <key>CFBundleName</key><string>Alttab</string>
-    <key>CFBundleDisplayName</key><string>Alttab</string>
-    <key>CFBundleExecutable</key><string>Alttab</string>
+    <key>CFBundleName</key><string>AltTab</string>
+    <key>CFBundleDisplayName</key><string>AltTab</string>
+    <key>CFBundleExecutable</key><string>AltTab</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>CFBundleVersion</key><string>1</string>

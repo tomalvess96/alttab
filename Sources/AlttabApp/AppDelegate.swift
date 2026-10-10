@@ -32,9 +32,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func setIcon(warning: Bool) {
-        let name = warning ? "exclamationmark.triangle" : "rectangle.on.rectangle"
-        statusItem.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Alttab")
+        statusItem.button?.image = warning
+            ? NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "AltTab: atalho bloqueado")
+            : Self.menuBarGlyph
     }
+
+    /// Ícone "Fenda" da barra de menu: três traços, o do meio mais alto. Imagem-modelo, então o
+    /// macOS pinta de claro ou escuro conforme a barra.
+    private static let menuBarGlyph: NSImage = {
+        let image = NSImage(size: NSSize(width: 14, height: 16), flipped: true) { _ in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: NSRect(x: 1, y: 4, width: 1.6, height: 8), xRadius: 0.8, yRadius: 0.8).fill()
+            NSBezierPath(roundedRect: NSRect(x: 5.6, y: 1, width: 2.8, height: 14), xRadius: 1.4, yRadius: 1.4).fill()
+            NSBezierPath(roundedRect: NSRect(x: 11.4, y: 4, width: 1.6, height: 8), xRadius: 0.8, yRadius: 0.8).fill()
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "AltTab"
+        return image
+    }()
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
