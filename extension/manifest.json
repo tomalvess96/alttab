@@ -7,7 +7,8 @@
   "permissions": [
     "tabs",
     "nativeMessaging",
-    "favicon"
+    "favicon",
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
