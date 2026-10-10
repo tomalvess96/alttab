@@ -138,3 +138,22 @@ import Testing
         #expect(m.isOpen)
     }
 }
+
+@Suite struct HotkeyStateMachineSearchClickTests {
+    @Test func clickingSearchKeepsPanelOpenAfterOptionRelease() {
+        var m = HotkeyStateMachine()
+        _ = m.handle(.optionDown)
+        _ = m.handle(.tab(shift: false))
+        m.stick()
+        #expect(m.isSticky)
+        #expect(m.handle(.optionUp) == ([], false))
+        #expect(m.isOpen)
+        #expect(m.handle(.character("w")) == ([.type("w")], true))
+    }
+
+    @Test func stickWhileClosedDoesNothing() {
+        var m = HotkeyStateMachine()
+        m.stick()
+        #expect(!m.isSticky)
+    }
+}

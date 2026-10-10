@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HeaderView: View {
     let state: SwitcherState
+    let controller: SwitcherController
 
     var body: some View {
         HStack(spacing: 16) {
@@ -28,9 +29,15 @@ struct HeaderView: View {
     private var searchField: some View {
         HStack(spacing: 9) {
             Image(systemName: "magnifyingglass").foregroundStyle(Theme.muted)
-            Text(state.model.query.isEmpty ? "digite pra filtrar…" : state.model.query)
-                .foregroundStyle(state.model.query.isEmpty ? Theme.muted : Theme.text)
-                .lineLimit(1)
+            HStack(spacing: 1) {
+                if !state.model.query.isEmpty {
+                    Text(state.model.query).foregroundStyle(Theme.text).lineLimit(1)
+                }
+                if state.searchFocused { Caret() }
+                if state.model.query.isEmpty {
+                    Text(state.searchFocused ? "digite…" : "digite pra filtrar…").foregroundStyle(Theme.muted).lineLimit(1)
+                }
+            }
             Spacer(minLength: 4)
             Text(countLabel)
                 .font(.system(size: 11, design: .monospaced))
@@ -41,8 +48,13 @@ struct HeaderView: View {
         .frame(width: 330, height: 40)
         .background(.white.opacity(0.05), in: .rect(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11)
-            .strokeBorder(state.model.query.isEmpty ? Color.white.opacity(0.1) : Theme.accent.opacity(0.55)))
+            .strokeBorder(state.model.query.isEmpty && !state.searchFocused ? Color.white.opacity(0.1) : Theme.accent.opacity(0.55)))
         .animation(.easeOut(duration: 0.2), value: state.model.query.isEmpty)
+        .animation(.easeOut(duration: 0.2), value: state.searchFocused)
+        .contentShape(.rect(cornerRadius: 11))
+        // Clicar na busca deixa o painel aberto ao soltar o Option, pronto para digitar.
+        .onTapGesture { controller.focusSearch() }
+        .accessibilityAddTraits(.isSearchField)
     }
 
     private var countLabel: String {
@@ -80,5 +92,18 @@ struct HeaderView: View {
         .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 4)
         .background(.white.opacity(0.04), in: .capsule)
         .overlay(Capsule().strokeBorder(.white.opacity(0.08)))
+    }
+}
+
+/// Cursor piscando no campo de busca quando ele está ativo.
+struct Caret: View {
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+            Rectangle()
+                .fill(Theme.accent)
+                .frame(width: 1.5, height: 16)
+                .opacity(Int(context.date.timeIntervalSinceReferenceDate * 2) % 2 == 0 ? 1 : 0)
+        }
+        .accessibilityHidden(true)
     }
 }

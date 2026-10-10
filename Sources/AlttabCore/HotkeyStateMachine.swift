@@ -24,6 +24,12 @@ public struct HotkeyStateMachine: Sendable {
 
     public init() {}
 
+    /// Clique na busca: o painel fica aberto ao soltar o Option, e as letras vão para a busca.
+    public mutating func stick() {
+        guard isOpen else { return }
+        isSticky = true
+    }
+
     public mutating func close() {
         isOpen = false
         isSticky = false
@@ -77,7 +83,7 @@ public struct HotkeyStateMachine: Sendable {
             queryLength += 1
             return ([.type(String(n))], true)
         case .character(let c):
-            if c.lowercased() == "w", optionHeld, queryLength == 0 { return ([.closeSelected], true) }
+            if c.lowercased() == "w", optionHeld, queryLength == 0, !isSticky { return ([.closeSelected], true) }
             queryLength += 1
             isSticky = true
             return ([.type(c)], true)

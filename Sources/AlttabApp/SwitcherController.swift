@@ -15,11 +15,24 @@ final class SwitcherState {
     var browser: BrowserStore?
     /// Capa do álbum ampliada no centro do painel.
     var coverOpen = false
+    /// Busca ativada por clique: cursor piscando e painel fixo.
+    var searchFocused = false
     /// Altura do painel nesta abertura (a grade do Edge se ajusta a ela, sem rolagem).
     var panelHeight: CGFloat = 720
 
     /// Espaço que sobra para a grade de abas: painel menos cabeçalho, destaque, player, rodapé e margens.
     var edgeGridHeight: Double { max(120, Double(panelHeight) - 440) }
+
+    /// Altura para os cartões de uma coluna: painel menos margens, cabeçalho, rodapé,
+    /// cabeçalho da coluna e a pílula do player quando ela aparece.
+    var cardsHeight: Double {
+        let player = browser?.currentMedia == nil ? 0.0 : 70.0
+        return max(120, Double(panelHeight) - 48 - 40 - 60 - 20 - 31 - player)
+    }
+
+    func cardThumbHeight(count: Int, wide: Bool) -> CGFloat {
+        CGFloat(ColumnLayout.cardThumbHeight(count: count, preferred: wide ? 112 : 58, available: cardsHeight))
+    }
 
     func thumbnail(for item: WindowItem) -> CGImage? {
         if let tab = item.tab { return browser?.thumbnails[tab.tabId] }
@@ -68,6 +81,11 @@ final class SwitcherController {
         bridge.send(.mediaControl(tabId: media.tabId, action: action))
     }
 
+    func focusSearch() {
+        machine.stick()
+        state.searchFocused = machine.isSticky
+    }
+
     func select(_ id: Int) {
         state.model.select(id)
     }
@@ -114,6 +132,7 @@ final class SwitcherController {
         state.thumbnails = thumbs.cache
         state.closingID = nil
         state.coverOpen = false
+        state.searchFocused = false
         state.openCount += 1
         let mouse = NSEvent.mouseLocation
         hoverGate.reset(x: mouse.x, y: mouse.y)
