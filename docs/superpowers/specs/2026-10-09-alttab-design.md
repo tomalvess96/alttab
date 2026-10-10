@@ -35,10 +35,10 @@ estar nela — mais rápido que trocar de workspace no AeroSpace e caçar a aba 
 | Tab / Shift+Tab (Option segurado) | Próximo / anterior, na ordem de uso recente |
 | ← → | Workspace anterior / próximo |
 | ↑ ↓ | Janela ou aba dentro do workspace |
-| 1–9 | Pula para o workspace |
-| Digitar qualquer letra | Filtra (a busca recebe o foco sozinha) |
-| **Option+W** | Fecha a janela/aba selecionada |
-| Soltar Option | Vai para a seleção e fecha o painel |
+| 1–9 | Pula para o workspace (enquanto nada foi digitado; depois entra na busca) |
+| Digitar qualquer letra | Filtra; o painel fica **fixo** (soltar Option não confirma mais — Enter confirma, Esc cancela) |
+| **Option+W** | Fecha a janela/aba selecionada (só enquanto nada foi digitado; depois W vira letra da busca) |
+| Soltar Option | Vai para a seleção e fecha o painel (se nada foi digitado) |
 | Esc | Fecha o painel sem trocar |
 | Mouse | Passar por cima seleciona (só com movimento real ≥14 px); clique escolhe |
 
