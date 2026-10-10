@@ -1,4 +1,4 @@
-import { tabsMessage, thumbSize, capturable, faviconRequestUrl, thumbsToResend, pruneThumbCache } from "./lib.js";
+import { tabsMessage, thumbSize, capturable, faviconRequestUrl, thumbsToResend, pruneThumbCache, shouldRememberThumb } from "./lib.js";
 
 const HOST = "br.inf.brusoft.alttab";
 let port = null;
@@ -69,7 +69,7 @@ async function captureActive(windowId) {
     const jpeg = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.72 });
     const thumb = { jpegBase64: await toBase64(jpeg), capturedAt: Date.now() };
     post({ type: "thumb", tabId: tab.id, ...thumb });
-    rememberThumb(tab.url, thumb);
+    if (shouldRememberThumb(tab)) rememberThumb(tab.url, thumb);
   } catch {
     // Janela minimizada, página protegida ou limite de capturas por segundo: segue sem foto.
   }
@@ -82,13 +82,13 @@ async function toBase64(blob) {
   return btoa(binary);
 }
 
-// Fotos das abas guardadas no Edge (por endereço): sobrevivem a reinício do app, da extensão e do Edge.
-// Sem isso, depois de reiniciar o app só a aba visível de cada janela tinha foto.
+// Fotos das abas guardadas na sessão do Edge (memória, por endereço): sobrevivem a reinício do app e da
+// extensão, somem quando o Edge fecha e nunca vão para o disco (são capturas de páginas como banco e e-mail).
 let thumbCache = null;
 let saveTimer = null;
 
 async function loadThumbCache() {
-  if (!thumbCache) thumbCache = (await chrome.storage.local.get("thumbs")).thumbs ?? {};
+  if (!thumbCache) thumbCache = (await chrome.storage.session.get("thumbs")).thumbs ?? {};
   return thumbCache;
 }
 
@@ -98,8 +98,8 @@ async function rememberThumb(url, thumb) {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const live = new Set((await chrome.tabs.query({})).map((tab) => tab.url));
-    thumbCache = pruneThumbCache(thumbCache, live);
-    chrome.storage.local.set({ thumbs: thumbCache }).catch(() => {});
+    thumbCache = pruneThumbCache(thumbCache, live, 100);
+    chrome.storage.session.set({ thumbs: thumbCache }).catch(() => {});
   }, 2000);
 }
 
