@@ -8,6 +8,9 @@ public enum BrowserMessage: Equatable, Sendable {
     case hello
     case activate(tabId: Int)
     case close(tabId: Int)
+    // mídia (YouTube Music)
+    case media(tabId: Int, state: MediaState?)
+    case mediaControl(tabId: Int, action: MediaAction)
 
     public enum DecodeError: Error {
         case unknownType(String)
@@ -20,6 +23,8 @@ public enum BrowserMessage: Equatable, Sendable {
         var tabId: Int?
         var jpegBase64: String?
         var capturedAt: Double?
+        var media: MediaState?
+        var action: MediaAction?
     }
 
     public static func decode(_ data: Data) throws -> BrowserMessage {
@@ -38,6 +43,12 @@ public enum BrowserMessage: Equatable, Sendable {
         case "close":
             guard let tabId = envelope.tabId else { throw DecodeError.missingField("tabId") }
             return .close(tabId: tabId)
+        case "media":
+            guard let tabId = envelope.tabId else { throw DecodeError.missingField("tabId") }
+            return .media(tabId: tabId, state: envelope.media)
+        case "mediaControl":
+            guard let tabId = envelope.tabId, let action = envelope.action else { throw DecodeError.missingField("mediaControl") }
+            return .mediaControl(tabId: tabId, action: action)
         default:
             throw DecodeError.unknownType(envelope.type)
         }
@@ -56,6 +67,10 @@ public enum BrowserMessage: Equatable, Sendable {
             envelope = Envelope(type: "activate", tabId: tabId)
         case .close(let tabId):
             envelope = Envelope(type: "close", tabId: tabId)
+        case let .media(tabId, state):
+            envelope = Envelope(type: "media", tabId: tabId, media: state)
+        case let .mediaControl(tabId, action):
+            envelope = Envelope(type: "mediaControl", tabId: tabId, action: action)
         }
         return try JSONEncoder().encode(envelope)
     }
