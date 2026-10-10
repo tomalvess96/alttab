@@ -106,6 +106,7 @@ struct SwitcherView: View {
             Kbd(keys: "← →", label: "workspace")
             Kbd(keys: "↑ ↓", label: "janela")
             Kbd(keys: "1–9", label: "pula pro workspace")
+            Kbd(keys: "/", label: "busca")
             Kbd(keys: "⌥ W", label: "fecha a selecionada")
             Kbd(keys: "esc", label: "cancela")
         }

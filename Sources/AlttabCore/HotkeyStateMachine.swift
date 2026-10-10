@@ -11,6 +11,8 @@ public enum KeyInput: Equatable, Sendable {
 public enum SwitcherAction: Equatable, Sendable {
     case open, next, previous, left, right, up, down
     case commit, cancel, closeSelected
+    /// "/" ou espaço com a busca vazia: ativa a busca (painel fixo) sem digitar nada.
+    case focusSearch
     case jump(String)
     case type(String)
     case backspace
@@ -82,6 +84,9 @@ public struct HotkeyStateMachine: Sendable {
             guard queryLength > 0 else { return ([.jump(String(n))], true) }
             queryLength += 1
             return ([.type(String(n))], true)
+        case .character(let c) where (c == "/" || c == " ") && queryLength == 0:
+            isSticky = true
+            return ([.focusSearch], true)
         case .character(let c):
             if c.lowercased() == "w", optionHeld, queryLength == 0, !isSticky { return ([.closeSelected], true) }
             queryLength += 1
