@@ -15,11 +15,19 @@ struct SwitcherView: View {
             HeaderView(state: state)
             columns
             Spacer(minLength: 0)
+            player
             footer
         }
         .padding(padding)
         .frame(width: width, height: height, alignment: .top)
         .glassEffect(.regular.tint(.black.opacity(0.35)), in: .rect(cornerRadius: Theme.panelRadius))
+        .overlay {
+            if state.coverOpen, let browser = state.browser, let media = browser.currentMedia {
+                CoverOverlay(media: media, artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
+                             tint: tint(browser, media),
+                             onClose: { withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { state.coverOpen = false } })
+            }
+        }
         .id(state.openCount)
         .transition(.scale(scale: 0.97).combined(with: .opacity))
     }
@@ -65,6 +73,22 @@ struct SwitcherView: View {
             running += column.items.count
         }
         return result
+    }
+
+    @ViewBuilder private var player: some View {
+        if let browser = state.browser, let media = browser.currentMedia {
+            PlayerBar(media: media,
+                      receivedAt: browser.mediaReceivedAt[media.tabId] ?? .now,
+                      artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
+                      tint: tint(browser, media),
+                      onControl: { controller.mediaControl($0) },
+                      onCover: { withAnimation(.spring(response: 0.6, dampingFraction: 0.78)) { state.coverOpen = true } })
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private func tint(_ browser: BrowserStore, _ media: MediaState) -> Color {
+        media.artworkUrl.flatMap { browser.artworkColor[$0] }?.color ?? Theme.accent
     }
 
     private var footer: some View {
