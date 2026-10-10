@@ -43,7 +43,8 @@ struct SwitcherView: View {
         } else {
             let focusedIndex = cols.firstIndex { $0.id == state.model.focusedColumnID }
             let focusedTabs = focusedIndex.map { cols[$0].items.filter { $0.tab != nil }.count } ?? 0
-            let focusMode = EdgeColumnLayout.mode(tabCount: focusedTabs, focused: true, searching: false)
+            let focusMode = EdgeColumnLayout.mode(tabCount: focusedTabs, focused: true, searching: false,
+                                                  gridHeight: state.edgeGridHeight)
             let widths = ColumnLayout.widths(count: cols.count, focusedIndex: focusedIndex,
                                              total: Double(width - padding * 2), spacing: Double(spacing),
                                              focusWeight: EdgeColumnLayout.focusWeight(for: focusMode),
