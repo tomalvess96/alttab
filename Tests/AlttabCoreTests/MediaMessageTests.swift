@@ -42,3 +42,16 @@ import Testing
         #expect(live.progress(at: 10) == 0)
     }
 }
+
+@Suite struct MediaTimeTextTests {
+    @Test(arguments: [(0.0, "0:00"), (9.9, "0:09"), (72.5, "1:12"), (600, "10:00"), (3725, "1:02:05"), (-3, "0:00")])
+    func formats(seconds: Double, expected: String) {
+        #expect(MediaState.timeText(seconds) == expected)
+    }
+
+    @Test func elapsedFollowsProgressAndClamps() {
+        let m = MediaState(tabId: 1, title: "t", artist: "", album: "", artworkUrl: nil, playing: true, position: 50, duration: 100)
+        #expect(m.elapsed(at: 10) == 60)
+        #expect(m.elapsed(at: 500) == 100)
+    }
+}

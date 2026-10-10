@@ -27,6 +27,19 @@ public struct MediaState: Equatable, Sendable, Codable {
         self.duration = duration
     }
 
+    /// Segundos tocados `elapsed` segundos depois do último aviso (sem passar da duração conhecida).
+    public func elapsed(at elapsed: Double) -> Double {
+        let now = position + (playing ? elapsed : 0)
+        return duration > 0 ? min(duration, max(0, now)) : max(0, now)
+    }
+
+    /// "1:12", "1:02:05".
+    public static func timeText(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds))
+        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
     /// Fração tocada (0…1) `elapsed` segundos depois do último aviso da extensão.
     public func progress(at elapsed: Double) -> Double {
         guard duration > 0 else { return 0 }

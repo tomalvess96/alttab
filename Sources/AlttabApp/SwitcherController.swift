@@ -15,6 +15,8 @@ final class SwitcherState {
     var browser: BrowserStore?
     /// Capa do álbum ampliada no centro do painel.
     var coverOpen = false
+    /// Painel na tela. Fechado, as telas (e as animações contínuas) deixam de existir.
+    var isVisible = false
     /// Busca ativada por clique: cursor piscando e painel fixo.
     var searchFocused = false
     /// Altura do painel nesta abertura (a grade do Edge se ajusta a ela, sem rolagem).
@@ -78,6 +80,18 @@ final class SwitcherController {
         browser.connected ? TabComposer.compose(windows: store.mruOrdered, tabs: browser.tabs) : store.mruOrdered
     }
 
+    /// Clique na pílula (fora dos botões): vai para a aba do YouTube Music no Edge.
+    func openMedia() {
+        guard let media = browser.currentMedia else { return }
+        let windowID = state.model.windows.first { $0.tab?.tabId == media.tabId }?.windowKey
+        hide()
+        bridge.send(.activate(tabId: media.tabId))
+        guard let windowID else { return }
+        store.noteFocused(windowID)
+        let client = self.client
+        Task.detached { try? client.focus(windowID: windowID) }
+    }
+
     func mediaControl(_ action: MediaAction) {
         guard let media = browser.currentMedia else { return }
         bridge.send(.mediaControl(tabId: media.tabId, action: action))
@@ -98,6 +112,7 @@ final class SwitcherController {
     /// para o callback nunca segurar a digitação do sistema.
     func handle(_ input: KeyInput) -> Bool {
         let (actions, swallow) = machine.handle(input)
+        DebugLog.write("input=\(input) actions=\(actions) open=\(machine.isOpen) sticky=\(machine.isSticky) panelVisible=\(panel?.isVisible ?? false)")
         schedule(actions)
         return swallow
     }
@@ -130,12 +145,14 @@ final class SwitcherController {
     }
 
     private func open() {
+        DebugLog.write("open() screenMain=\(String(describing: NSScreen.main?.frame))")
         state.model = SwitcherModel(windows: currentItems(), currentWorkspace: store.currentWorkspace)
         state.thumbnails = thumbs.cache
         state.closingID = nil
         state.coverOpen = false
         state.searchFocused = false
         state.openCount += 1
+        state.isVisible = true
         let mouse = NSEvent.mouseLocation
         hoverGate.reset(x: mouse.x, y: mouse.y)
 
@@ -179,8 +196,10 @@ final class SwitcherController {
     }
 
     private func hide() {
+        DebugLog.write("hide()")
         machine.close()
         panel?.dismiss()
+        state.isVisible = false
         if let outsideClick { NSEvent.removeMonitor(outsideClick) }
         outsideClick = nil
     }
@@ -213,3 +232,17 @@ final class SwitcherController {
     }
 }
 
+
+// DEPURAÇÃO TEMPORÁRIA — Option+Tab que para de abrir até reiniciar o app.
+enum DebugLog {
+    static let url = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/alttab-debug.log")
+    static func write(_ line: String) {
+        let stamp = Date.now.formatted(.dateTime.hour().minute().second())
+        let data = "\(stamp) \(line)\n".data(using: .utf8)!
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile(); handle.write(data); try? handle.close()
+        } else {
+            try? data.write(to: url)
+        }
+    }
+}
