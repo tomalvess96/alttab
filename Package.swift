@@ -7,6 +7,7 @@ let package = Package(
     targets: [
         .target(name: "AlttabCore"),
         .executableTarget(name: "AlttabApp", dependencies: ["AlttabCore"]),
+        .executableTarget(name: "AlttabHost", dependencies: ["AlttabCore"]),
         .testTarget(name: "AlttabCoreTests", dependencies: ["AlttabCore"]),
     ]
 )

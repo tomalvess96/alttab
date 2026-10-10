@@ -5,7 +5,9 @@ import ServiceManagement
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let store = WindowStore()
     private let thumbs = WindowThumbs()
-    private lazy var controller = SwitcherController(store: store, thumbs: thumbs)
+    let browser = BrowserStore()
+    private lazy var bridge = BrowserBridge(store: browser)
+    private lazy var controller = SwitcherController(store: store, thumbs: thumbs, browser: browser, bridge: bridge)
     private let hotkey = HotkeyMonitor()
     private var hotkeyActive = false
     private var statusItem: NSStatusItem!
@@ -21,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         secureTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.setIcon(warning: SecureInput.holder() != nil) }
         }
+        bridge.start()
         hotkey.onInput = { [weak self] input in self?.controller.handle(input) ?? false }
         hotkey.onOptionSync = { [weak self] held in self?.controller.syncOption(held: held) }
         hotkey.isSwitcherOpen = { [weak self] in self?.controller.isOpen ?? false }
@@ -40,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             menu.addItem(disabled("\(store.windows.count) janelas · workspace \(store.currentWorkspace)"))
         }
+        menu.addItem(disabled(browser.connected ? "Edge: \(browser.tabs.count) abas" : "Edge: extensão desconectada"))
         if let holder = SecureInput.holder() {
             menu.addItem(disabled("Option+Tab bloqueado: Secure Input ativo em \(holder)"))
         }
