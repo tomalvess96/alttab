@@ -1,6 +1,9 @@
 // Lê o player do YouTube Music e aperta os botões dele. Fonte principal: <video> + mediaSession;
 // seletores do DOM só como alternativa (mudam com frequência).
 (() => {
+  // Pode ser injetado de novo quando a extensão recarrega (aba já aberta): roda uma vez por instância.
+  if (globalThis.__alttabContent) return;
+  globalThis.__alttabContent = true;
   // Mesma tabela de lib.js (CONTROL_LABELS): nome exato do botão no player novo (ytmusic-wiz-player-controls).
   const LABELS = {
     next: ["Avançar", "Próxima", "Próximo", "Next"],

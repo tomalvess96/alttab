@@ -121,4 +121,13 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   post({ type: "media", tabId, media: message.media ? { tabId, ...message.media } : null });
 });
 chrome.tabs.onRemoved.addListener((tabId) => post({ type: "media", tabId, media: null }));
+// Abas do YouTube Music abertas antes da extensão (re)carregar ficam com o script antigo, órfão:
+// ele ainda manda o que toca, mas não recebe mais os comandos. Injeta o atual nelas.
+async function injectIntoOpenMusicTabs() {
+  for (const tab of await chrome.tabs.query({ url: "https://music.youtube.com/*" })) {
+    chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] }).catch(() => {});
+  }
+}
+chrome.runtime.onInstalled.addListener(injectIntoOpenMusicTabs);
+chrome.runtime.onStartup.addListener(injectIntoOpenMusicTabs);
 connect();
