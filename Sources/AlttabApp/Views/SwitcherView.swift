@@ -91,7 +91,10 @@ struct SwitcherView: View {
                       artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
                       tint: tint(browser, media),
                       onControl: { controller.mediaControl($0) },
-                      onCover: { withAnimation(.spring(response: 0.6, dampingFraction: 0.78)) { state.coverOpen = true } },
+                      onCover: {
+                          controller.playerInteraction()
+                          withAnimation(.spring(response: 0.6, dampingFraction: 0.78)) { state.coverOpen = true }
+                      },
                       onOpen: { controller.openMedia() })
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         }

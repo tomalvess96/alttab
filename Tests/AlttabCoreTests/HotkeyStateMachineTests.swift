@@ -181,3 +181,34 @@ import Testing
         #expect(m.handle(.character(" ")) == ([.type(" ")], true))
     }
 }
+
+@Suite struct HotkeyStateMachinePlayerTests {
+    private func opened() -> HotkeyStateMachine {
+        var m = HotkeyStateMachine()
+        _ = m.handle(.optionDown)
+        _ = m.handle(.tab(shift: false))
+        return m
+    }
+
+    @Test func releasingOptionAfterUsingPlayerJustCloses() {
+        var m = opened()
+        m.stayOnCurrentWindow()
+        #expect(m.handle(.optionUp) == ([.cancel], false))
+        #expect(!m.isOpen)
+    }
+
+    @Test func enterStillCommitsAfterUsingPlayer() {
+        var m = opened()
+        m.stayOnCurrentWindow()
+        #expect(m.handle(.enter) == ([.commit], true))
+    }
+
+    @Test func nextOpeningCommitsNormallyAgain() {
+        var m = opened()
+        m.stayOnCurrentWindow()
+        _ = m.handle(.optionUp)
+        _ = m.handle(.optionDown)
+        _ = m.handle(.tab(shift: false))
+        #expect(m.handle(.optionUp) == ([.commit], false))
+    }
+}

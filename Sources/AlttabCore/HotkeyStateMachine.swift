@@ -23,6 +23,8 @@ public struct HotkeyStateMachine: Sendable {
     public private(set) var isSticky = false
     private var optionHeld = false
     private var queryLength = 0
+    /// Usou o player: soltar o Option fecha o painel sem trocar de janela.
+    private var stayOnRelease = false
 
     public init() {}
 
@@ -32,10 +34,17 @@ public struct HotkeyStateMachine: Sendable {
         isSticky = true
     }
 
+    /// Mexeu no player (trocar música, capa): soltar o Option só fecha, sem ir para a janela selecionada.
+    public mutating func stayOnCurrentWindow() {
+        guard isOpen else { return }
+        stayOnRelease = true
+    }
+
     public mutating func close() {
         isOpen = false
         isSticky = false
         queryLength = 0
+        stayOnRelease = false
     }
 
     /// Confere o Option com o estado real do teclado (cada evento traz os modificadores).
@@ -53,8 +62,9 @@ public struct HotkeyStateMachine: Sendable {
         case .optionUp:
             optionHeld = false
             guard isOpen, !isSticky else { return ([], false) }
+            let stay = stayOnRelease
             close()
-            return ([.commit], false)
+            return ([stay ? .cancel : .commit], false)
         default:
             break
         }

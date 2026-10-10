@@ -92,7 +92,13 @@ final class SwitcherController {
         Task.detached { try? client.focus(windowID: windowID) }
     }
 
+    /// Cliques no player (controles, capa) não podem levar à troca de janela ao soltar o Option.
+    func playerInteraction() {
+        machine.stayOnCurrentWindow()
+    }
+
     func mediaControl(_ action: MediaAction) {
+        playerInteraction()
         guard let media = browser.currentMedia else { return }
         bridge.send(.mediaControl(tabId: media.tabId, action: action))
     }
