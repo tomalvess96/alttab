@@ -77,3 +77,8 @@ export function pruneThumbCache(cache, liveUrls, max = 150) {
   const others = entries.filter(([url]) => !liveUrls.has(url)).sort((a, b) => b[1].capturedAt - a[1].capturedAt);
   return Object.fromEntries([...live, ...others.slice(0, Math.max(0, max - live.length))]);
 }
+
+/** Foto guardada na sessão do Edge: nunca de aba anônima, nunca de página interna. */
+export function shouldRememberThumb(tab) {
+  return !tab.incognito && capturable(tab.url);
+}

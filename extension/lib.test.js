@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl, controlAction, thumbsToResend, pruneThumbCache } from "./lib.js";
+import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl, controlAction, thumbsToResend, pruneThumbCache, shouldRememberThumb } from "./lib.js";
 
 test("tabPayload normaliza campos que o Chromium pode omitir", () => {
   assert.deepEqual(tabPayload({ id: 3, windowId: 1, active: true }), {
@@ -82,4 +82,10 @@ test("thumbsToResend devolve a foto guardada de cada aba aberta, pelo endereço"
 test("pruneThumbCache mantém abas abertas e as mais recentes até o limite", () => {
   const cache = { a: { capturedAt: 1 }, b: { capturedAt: 5 }, c: { capturedAt: 9 }, aberta: { capturedAt: 0 } };
   assert.deepEqual(Object.keys(pruneThumbCache(cache, new Set(["aberta"]), 2)).sort(), ["aberta", "c"]);
+});
+
+test("shouldRememberThumb nunca guarda aba anônima nem página interna", () => {
+  assert.equal(shouldRememberThumb({ url: "https://banco.com/", incognito: false }), true);
+  assert.equal(shouldRememberThumb({ url: "https://banco.com/", incognito: true }), false);
+  assert.equal(shouldRememberThumb({ url: "edge://settings", incognito: false }), false);
 });
