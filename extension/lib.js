@@ -62,3 +62,18 @@ export function controlAction(label) {
   for (const [action, labels] of Object.entries(CONTROL_LABELS)) if (labels.includes(label)) return action;
   return null;
 }
+
+/** Fotos guardadas (por endereço) das abas abertas, no formato da mensagem "thumb". */
+export function thumbsToResend(cache, tabs) {
+  return tabs
+    .filter((tab) => cache[tab.url])
+    .map((tab) => ({ type: "thumb", tabId: tab.id, jpegBase64: cache[tab.url].jpegBase64, capturedAt: cache[tab.url].capturedAt }));
+}
+
+/** Guarda as fotos das abas abertas e completa com as mais recentes até `max` (o resto sai). */
+export function pruneThumbCache(cache, liveUrls, max = 150) {
+  const entries = Object.entries(cache);
+  const live = entries.filter(([url]) => liveUrls.has(url));
+  const others = entries.filter(([url]) => !liveUrls.has(url)).sort((a, b) => b[1].capturedAt - a[1].capturedAt);
+  return Object.fromEntries([...live, ...others.slice(0, Math.max(0, max - live.length))]);
+}

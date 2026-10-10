@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl, controlAction } from "./lib.js";
+import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl, controlAction, thumbsToResend, pruneThumbCache } from "./lib.js";
 
 test("tabPayload normaliza campos que o Chromium pode omitir", () => {
   assert.deepEqual(tabPayload({ id: 3, windowId: 1, active: true }), {
@@ -68,4 +68,18 @@ test("controlAction reconhece os botões do player novo pelo nome exato", () => 
   assert.equal(controlAction("Avançar 30 segundos"), null);
   assert.equal(controlAction("Voltar 10 segundos"), null);
   assert.equal(controlAction(null), null);
+});
+
+test("thumbsToResend devolve a foto guardada de cada aba aberta, pelo endereço", () => {
+  const cache = { "https://a.com/": { jpegBase64: "AAA", capturedAt: 10 }, "https://fechada.com/": { jpegBase64: "ZZZ", capturedAt: 5 } };
+  const tabs = [{ id: 1, url: "https://a.com/" }, { id: 2, url: "https://sem-foto.com/" }, { id: 3, url: "https://a.com/" }];
+  assert.deepEqual(thumbsToResend(cache, tabs), [
+    { type: "thumb", tabId: 1, jpegBase64: "AAA", capturedAt: 10 },
+    { type: "thumb", tabId: 3, jpegBase64: "AAA", capturedAt: 10 },
+  ]);
+});
+
+test("pruneThumbCache mantém abas abertas e as mais recentes até o limite", () => {
+  const cache = { a: { capturedAt: 1 }, b: { capturedAt: 5 }, c: { capturedAt: 9 }, aberta: { capturedAt: 0 } };
+  assert.deepEqual(Object.keys(pruneThumbCache(cache, new Set(["aberta"]), 2)).sort(), ["aberta", "c"]);
 });
