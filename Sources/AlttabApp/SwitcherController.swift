@@ -25,9 +25,14 @@ final class SwitcherController {
     /// Clique em qualquer outro app fecha o painel (inclusive no modo fixo de busca).
     private var outsideClick: Any?
 
-    init(store: WindowStore, thumbs: WindowThumbs) {
+    private let browser: BrowserStore
+    private let bridge: BrowserBridge
+
+    init(store: WindowStore, thumbs: WindowThumbs, browser: BrowserStore, bridge: BrowserBridge) {
         self.store = store
         self.thumbs = thumbs
+        self.browser = browser
+        self.bridge = bridge
         store.onFocusChange = { [weak thumbs] id in
             thumbs?.capture(ids: [id]) { _, _ in }
         }
