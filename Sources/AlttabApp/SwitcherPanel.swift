@@ -23,10 +23,9 @@ final class SwitcherPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
-    func present(width: CGFloat) {
+    /// Altura fixa por abertura: o conteúdo cresce (coluna em foco, grade do Edge) sem recalcular a janela.
+    func present(width: CGFloat, height: CGFloat) {
         guard let screen = NSScreen.main else { return }
-        hosting.layoutSubtreeIfNeeded()
-        let height = min(hosting.fittingSize.height, screen.visibleFrame.height - 48)
         let frame = NSRect(x: screen.visibleFrame.midX - width / 2, y: screen.visibleFrame.midY - height / 2,
                            width: width, height: height)
         setFrame(frame, display: true)

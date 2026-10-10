@@ -7,6 +7,7 @@ struct WindowCardView: View {
     let isWide: Bool
     let isClosing: Bool
     let thumbnail: CGImage?
+    var capturedAt: Date? = nil
     let query: String
     let appearDelay: Double
     let onHover: () -> Void
@@ -24,6 +25,9 @@ struct WindowCardView: View {
             thumb
                 .frame(height: isWide ? 112 : 58)
                 .clipShape(.rect(cornerRadius: Theme.thumbRadius))
+                .overlay(alignment: .bottomTrailing) {
+                    if let ago = Ago.text(capturedAt) { AgoBadge(text: ago).padding(5) }
+                }
                 .overlay(alignment: .topTrailing) {
                     if isSelected && !isClosing {
                         CloseButton(action: onClose)
@@ -32,11 +36,15 @@ struct WindowCardView: View {
                     }
                 }
             HStack(spacing: 6) {
-                AppIcon(item: item).frame(width: 16, height: 16)
+                ItemIcon(item: item, size: 16)
                 HighlightedText(text: item.displayTitle, query: query)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.text)
                     .lineLimit(1)
+                if item.tab?.audible == true {
+                    Spacer(minLength: 0)
+                    AudioBars()
+                }
             }
         }
         .padding(7)
@@ -90,7 +98,7 @@ struct WindowCardView: View {
         } else {
             ZStack {
                 Color(red: 0.055, green: 0.063, blue: 0.075)
-                AppIcon(item: item).frame(width: 28, height: 28).opacity(0.85)
+                ItemIcon(item: item, size: 28).opacity(0.85)
             }
         }
     }

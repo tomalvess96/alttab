@@ -5,6 +5,7 @@ struct SwitcherView: View {
     let state: SwitcherState
     let controller: SwitcherController
     let width: CGFloat
+    let height: CGFloat
 
     private let padding: CGFloat = 24
     private let spacing: CGFloat = 10
@@ -13,10 +14,11 @@ struct SwitcherView: View {
         VStack(alignment: .leading, spacing: 20) {
             HeaderView(state: state)
             columns
+            Spacer(minLength: 0)
             footer
         }
         .padding(padding)
-        .frame(width: width)
+        .frame(width: width, height: height, alignment: .top)
         .glassEffect(.regular.tint(.black.opacity(0.35)), in: .rect(cornerRadius: Theme.panelRadius))
         .id(state.openCount)
         .transition(.scale(scale: 0.97).combined(with: .opacity))
@@ -32,8 +34,11 @@ struct SwitcherView: View {
                 .padding(.vertical, 48)
         } else {
             let focusedIndex = cols.firstIndex { $0.id == state.model.focusedColumnID }
+            let focusedTabs = focusedIndex.map { cols[$0].items.filter { $0.tab != nil }.count } ?? 0
+            let focusMode = EdgeColumnLayout.mode(tabCount: focusedTabs, focused: true, searching: false)
             let widths = ColumnLayout.widths(count: cols.count, focusedIndex: focusedIndex,
                                              total: Double(width - padding * 2), spacing: Double(spacing),
+                                             focusWeight: EdgeColumnLayout.focusWeight(for: focusMode),
                                              caps: state.model.query.isEmpty ? nil : (340, 190))
             let starts = startIndices(cols)
             HStack(alignment: .top, spacing: spacing) {

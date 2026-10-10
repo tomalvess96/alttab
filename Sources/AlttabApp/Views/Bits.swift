@@ -82,3 +82,79 @@ enum UserProfile {
         return identity?.image
     }()
 }
+
+struct TabIcon: View {
+    let tab: TabRef
+    let size: CGFloat
+
+    var body: some View {
+        AsyncImage(url: tab.favIconURL.flatMap(URL.init(string:))) { phase in
+            if let image = phase.image {
+                image.resizable().interpolation(.high)
+            } else {
+                Text(String(tab.host.prefix(1)).uppercased())
+                    .font(.system(size: size * 0.55, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(white: 0.32))
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(.rect(cornerRadius: size * 0.25))
+    }
+}
+
+/// Ícone do app para janela; favicon para aba.
+struct ItemIcon: View {
+    let item: WindowItem
+    let size: CGFloat
+
+    var body: some View {
+        if let tab = item.tab {
+            TabIcon(tab: tab, size: size)
+        } else {
+            AppIcon(item: item).frame(width: size, height: size)
+        }
+    }
+}
+
+struct AudioBars: View {
+    @State private var phase = false
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(0..<3, id: \.self) { index in
+                Capsule()
+                    .fill(Theme.accent)
+                    .frame(width: 2, height: phase ? [10, 4, 8][index] : [4, 10, 5][index])
+                    .animation(.easeInOut(duration: 0.4 + Double(index) * 0.1).repeatForever(autoreverses: true), value: phase)
+            }
+        }
+        .frame(height: 10, alignment: .bottom)
+        .onAppear { phase = true }
+        .accessibilityLabel("Tocando áudio")
+    }
+}
+
+struct AgoBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 9.5, design: .monospaced))
+            .foregroundStyle(Theme.text)
+            .padding(.horizontal, 5).padding(.vertical, 1)
+            .background(.black.opacity(0.55), in: .rect(cornerRadius: 4))
+    }
+}
+
+enum Ago {
+    static func text(_ date: Date?) -> String? {
+        guard let date else { return nil }
+        if Date.now.timeIntervalSince(date) < 60 { return "agora" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: .now)
+    }
+}
