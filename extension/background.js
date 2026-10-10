@@ -159,4 +159,6 @@ async function injectIntoOpenMusicTabs() {
 }
 chrome.runtime.onInstalled.addListener(injectIntoOpenMusicTabs);
 chrome.runtime.onStartup.addListener(injectIntoOpenMusicTabs);
+// A versão anterior chegou a gravar as fotos no disco (storage.local): apaga.
+chrome.storage.local.remove("thumbs").catch(() => {});
 connect();
