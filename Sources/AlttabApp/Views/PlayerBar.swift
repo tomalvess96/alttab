@@ -12,6 +12,8 @@ struct PlayerBar: View {
     let tint: Color
     let onControl: (MediaAction) -> Void
     let onCover: () -> Void
+    /// Clique fora dos botões: vai para a aba do YouTube Music.
+    let onOpen: () -> Void
 
     @State private var hover: CGPoint?
 
@@ -61,6 +63,9 @@ struct PlayerBar: View {
         .shadow(color: tint.opacity(0.19), radius: 14, y: 8)
         .animation(.easeInOut(duration: 0.6), value: tint)
         .animation(.spring(response: 0.35), value: media.title)
+        .contentShape(.rect(cornerRadius: 14))
+        .onTapGesture(perform: onOpen)
+        .help("Abrir no YouTube Music")
         .onContinuousHover { phase in
             switch phase {
             case .active(let point): hover = point
@@ -167,17 +172,20 @@ struct PressStyle: ButtonStyle {
     }
 }
 
-/// Capa grande no centro do painel: gira e cresce a partir da pequena; clique fecha.
+/// Capa grande no centro do painel, com controles de player. Clique fora dos controles fecha.
 struct CoverOverlay: View {
     let media: MediaState
+    let receivedAt: Date
     let artwork: CGImage?
     let tint: Color
+    let onControl: (MediaAction) -> Void
+    let onOpen: () -> Void
     let onClose: () -> Void
 
     var body: some View {
         ZStack {
             Rectangle().fill(.black.opacity(0.55)).background(.ultraThinMaterial)
-            VStack(spacing: 16) {
+            VStack(spacing: 18) {
                 Group {
                     if let artwork {
                         Image(decorative: artwork, scale: 1).resizable().aspectRatio(contentMode: .fill)
@@ -193,16 +201,82 @@ struct CoverOverlay: View {
                 .shadow(color: tint.opacity(0.4), radius: 40, y: 20)
                 .transition(.modifier(active: FlipModifier(angle: 180, scale: 0.14), identity: FlipModifier(angle: 0, scale: 1)))
                 VStack(spacing: 4) {
-                    Text(media.title).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
+                    Text(media.title).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text).lineLimit(1)
                     Text([media.artist, media.album].filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(.system(size: 13)).foregroundStyle(Theme.text.opacity(0.72))
+                        .font(.system(size: 13)).foregroundStyle(Theme.text.opacity(0.72)).lineLimit(1)
                 }
+                .frame(width: 360)
+                progress
+                controls
+                Button(action: onOpen) {
+                    Label("Abrir no YouTube Music", systemImage: "arrow.up.forward.app")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Theme.text.opacity(0.8))
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(.white.opacity(0.08), in: .capsule)
+                }
+                .buttonStyle(PressStyle())
             }
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
         .clipShape(.rect(cornerRadius: Theme.panelRadius))
         .contentShape(.rect)
         .onTapGesture(perform: onClose)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel("Fechar capa ampliada")
+        .accessibilityLabel("Capa ampliada. Clique fora dos controles para fechar")
+    }
+
+    private var progress: some View {
+        TimelineView(.animation(minimumInterval: 0.5, paused: !media.playing)) { context in
+            let elapsed = context.date.timeIntervalSince(receivedAt)
+            let fraction = media.progress(at: elapsed)
+            VStack(spacing: 6) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(.white.opacity(0.14))
+                        Capsule().fill(tint).frame(width: max(4, geo.size.width * fraction))
+                    }
+                }
+                .frame(height: 4)
+                HStack {
+                    Text(MediaState.timeText(media.elapsed(at: elapsed)))
+                    Spacer()
+                    Text(media.duration > 0 ? MediaState.timeText(media.duration) : "ao vivo")
+                }
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(Theme.text.opacity(0.65))
+            }
+            .frame(width: 320)
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 28) {
+            controlButton("backward.end.fill", "Música anterior", .previous, size: 20)
+            Button { onControl(.playPause) } label: {
+                Image(systemName: media.playing ? "pause.fill" : "play.fill")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 62, height: 62)
+                    .background(Circle().fill(tint))
+                    .shadow(color: tint.opacity(0.5), radius: 14)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(PressStyle())
+            .accessibilityLabel(media.playing ? "Pausar" : "Tocar")
+            controlButton("forward.end.fill", "Próxima música", .next, size: 20)
+        }
+    }
+
+    private func controlButton(_ symbol: String, _ label: String, _ action: MediaAction, size: CGFloat) -> some View {
+        Button { onControl(action) } label: {
+            Image(systemName: symbol)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(Theme.text)
+                .frame(width: 48, height: 48)
+                .background(Circle().fill(.white.opacity(0.08)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressStyle())
+        .accessibilityLabel(label)
     }
 }

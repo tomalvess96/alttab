@@ -11,6 +11,10 @@ struct SwitcherView: View {
     private let spacing: CGFloat = 10
 
     var body: some View {
+        if state.isVisible { panel } else { Color.clear }
+    }
+
+    private var panel: some View {
         VStack(alignment: .leading, spacing: 20) {
             HeaderView(state: state, controller: controller)
             columns
@@ -23,8 +27,12 @@ struct SwitcherView: View {
         .glassEffect(.regular.tint(.black.opacity(0.35)), in: .rect(cornerRadius: Theme.panelRadius))
         .overlay {
             if state.coverOpen, let browser = state.browser, let media = browser.currentMedia {
-                CoverOverlay(media: media, artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
+                CoverOverlay(media: media,
+                             receivedAt: browser.mediaReceivedAt[media.tabId] ?? .now,
+                             artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
                              tint: tint(browser, media),
+                             onControl: { controller.mediaControl($0) },
+                             onOpen: { controller.openMedia() },
                              onClose: { withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) { state.coverOpen = false } })
             }
         }
@@ -83,7 +91,8 @@ struct SwitcherView: View {
                       artwork: media.artworkUrl.flatMap { browser.artwork[$0] },
                       tint: tint(browser, media),
                       onControl: { controller.mediaControl($0) },
-                      onCover: { withAnimation(.spring(response: 0.6, dampingFraction: 0.78)) { state.coverOpen = true } })
+                      onCover: { withAnimation(.spring(response: 0.6, dampingFraction: 0.78)) { state.coverOpen = true } },
+                      onOpen: { controller.openMedia() })
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
