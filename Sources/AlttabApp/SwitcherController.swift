@@ -15,6 +15,11 @@ final class SwitcherState {
     var browser: BrowserStore?
     /// Capa do álbum ampliada no centro do painel.
     var coverOpen = false
+    /// Altura do painel nesta abertura (a grade do Edge se ajusta a ela, sem rolagem).
+    var panelHeight: CGFloat = 720
+
+    /// Espaço que sobra para a grade de abas: painel menos cabeçalho, destaque, player, rodapé e margens.
+    var edgeGridHeight: Double { max(120, Double(panelHeight) - 440) }
 
     func thumbnail(for item: WindowItem) -> CGImage? {
         if let tab = item.tab { return browser?.thumbnails[tab.tabId] }
@@ -116,6 +121,7 @@ final class SwitcherController {
         let visible = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1280, height: 800)
         panelWidth = min(1232, visible.width - 48)
         let panelHeight = min(visible.height - 80, 720)
+        state.panelHeight = panelHeight
         if panel == nil {
             panel = SwitcherPanel(rootView: SwitcherView(state: state, controller: self, width: panelWidth, height: panelHeight))
         }

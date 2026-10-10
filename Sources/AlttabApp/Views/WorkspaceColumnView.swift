@@ -43,7 +43,8 @@ struct WorkspaceColumnView: View {
             if !tabs.isEmpty {
                 EdgeTabsView(tabs: tabs,
                              mode: EdgeColumnLayout.mode(tabCount: tabs.count, focused: isFocused,
-                                                         searching: !state.model.query.isEmpty),
+                                                         searching: !state.model.query.isEmpty,
+                                                         gridHeight: state.edgeGridHeight),
                              isFocused: isFocused, firstIndex: firstIndex + windows.count,
                              state: state, controller: controller)
             }

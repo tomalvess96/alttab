@@ -33,7 +33,8 @@ struct EdgeTabsView: View {
                     ForEach(tabs) { tab in
                         MiniTabCard(item: tab, isSelected: tab.id == state.model.selectedID,
                                     thumbnail: state.thumbnail(for: tab),
-                                    height: EdgeColumnLayout.miniThumbHeight(tabCount: tabs.count, columns: columns),
+                                    height: EdgeColumnLayout.miniThumbHeight(tabCount: tabs.count, columns: columns,
+                                                                            available: state.edgeGridHeight),
                                     onHover: { controller.hover(tab.id) }, onClick: { controller.click(tab.id) })
                     }
                 }
@@ -91,10 +92,12 @@ struct TabHeroView: View {
                     Text(item.displayTitle)
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(Theme.text)
-                        .lineLimit(2)
+                        // Sempre reserva as duas linhas: título curto ou longo, a grade embaixo não sobe nem desce.
+                        .lineLimit(2, reservesSpace: true)
                     Text(item.tab?.host ?? "")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if item.tab?.audible == true { AudioBars() }

@@ -8,9 +8,17 @@ public enum EdgeColumnLayout: Equatable, Sendable {
 
     public static let peekCount = 3
 
-    public static func mode(tabCount: Int, focused: Bool, searching: Bool) -> EdgeColumnLayout {
+    /// Altura mínima de uma linha da grade: miniatura de 26 pt + 22 pt de respiro.
+    static let minRowHeight = 48.0
+
+    /// `gridHeight`: altura disponível para a grade. Muitas abas ganham mais colunas para caber sem rolagem.
+    public static func mode(tabCount: Int, focused: Bool, searching: Bool, gridHeight: Double = 300) -> EdgeColumnLayout {
         guard tabCount > 4 else { return .cards }
-        if focused { return .heroGrid(columns: tabCount <= 9 ? 3 : tabCount <= 20 ? 5 : 6) }
+        if focused {
+            let base = tabCount <= 9 ? 3 : tabCount <= 20 ? 5 : 6
+            let maxRows = max(1, Int(gridHeight / minRowHeight))
+            return .heroGrid(columns: max(base, (tabCount + maxRows - 1) / maxRows))
+        }
         if searching { return .cards }
         return .peek(visible: peekCount, hidden: tabCount - peekCount)
     }
