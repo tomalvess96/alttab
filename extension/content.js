@@ -1,11 +1,23 @@
 // Lê o player do YouTube Music e aperta os botões dele. Fonte principal: <video> + mediaSession;
 // seletores do DOM só como alternativa (mudam com frequência).
 (() => {
-  const PLAY = ["#play-pause-button", "ytmusic-player-bar .play-pause-button"];
-  const NEXT = ["ytmusic-player-bar .next-button", '[aria-label="Next"]', '[aria-label="Próxima"]', '[aria-label="Próximo"]'];
-  const PREV = ["ytmusic-player-bar .previous-button", '[aria-label="Previous"]', '[aria-label="Anterior"]'];
-
-  const find = (selectors) => selectors.map((s) => document.querySelector(s)).find(Boolean) ?? null;
+  // Mesma tabela de lib.js (CONTROL_LABELS): nome exato do botão no player novo (ytmusic-wiz-player-controls).
+  const LABELS = {
+    next: ["Avançar", "Próxima", "Próximo", "Next"],
+    previous: ["Anterior", "Previous"],
+    playPause: ["Tocar", "Pausar", "Reproduzir", "Play", "Pause"],
+  };
+  // Player antigo, se o YouTube Music voltar a ele.
+  const LEGACY = {
+    next: ["ytmusic-player-bar .next-button"],
+    previous: ["ytmusic-player-bar .previous-button"],
+    playPause: ["#play-pause-button", "ytmusic-player-bar .play-pause-button"],
+  };
+  function findControl(action) {
+    const scope = document.querySelector("ytmusic-wiz-player-controls") ?? document.querySelector("ytmusic-player-bar") ?? document;
+    const byLabel = [...scope.querySelectorAll("button[aria-label]")].find((b) => LABELS[action].includes(b.getAttribute("aria-label")));
+    return byLabel ?? LEGACY[action].map((s) => document.querySelector(s)).find(Boolean) ?? null;
+  }
   const area = (a) => String(a.sizes ?? "0x0").split("x").map(Number).reduce((x, y) => (x || 0) * (y || 0), 1);
 
   function snapshot() {
@@ -43,13 +55,11 @@
   chrome.runtime.onMessage.addListener((message) => {
     const video = document.querySelector("video");
     if (message.action === "playPause") {
-      const button = find(PLAY);
+      const button = findControl("playPause");
       if (button) button.click();
       else if (video) video.paused ? video.play() : video.pause();
-    } else if (message.action === "next") {
-      find(NEXT)?.click();
-    } else if (message.action === "previous") {
-      find(PREV)?.click();
+    } else if (message.action === "next" || message.action === "previous") {
+      findControl(message.action)?.click();
     }
     setTimeout(() => report(true), 300);
   });
