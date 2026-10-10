@@ -41,7 +41,7 @@ private func tab(_ id: Int, window: Int, _ title: String, active: Bool = false, 
         #expect(items.map(\.id) == [613, -3, -2, -4, 252])
         #expect(items[1].workspace == "10")
         #expect(items[1].tab == TabRef(tabId: 2, windowID: 297, url: "https://site2.com/x", host: "site2.com",
-                                       favIconURL: nil, audible: true))
+                                       favIconData: nil, audible: true))
         #expect(items[1].displayTitle == "YouTube")
     }
 

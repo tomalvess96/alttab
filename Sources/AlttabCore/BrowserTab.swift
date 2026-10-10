@@ -7,18 +7,21 @@ public struct BrowserTab: Equatable, Sendable, Codable {
     public let title: String
     public let url: String
     public let favIconUrl: String?
+    /// Ícone em base64 tirado do cache de favicons do próprio Edge (o app nunca baixa favicon).
+    public let favIconData: String?
     public let active: Bool
     public let audible: Bool
     /// Milissegundos desde 1970 (`tab.lastAccessed` do Chromium).
     public let lastAccessed: Double
 
     public init(id: Int, windowId: Int, title: String, url: String, favIconUrl: String?,
-                active: Bool, audible: Bool, lastAccessed: Double) {
+                active: Bool, audible: Bool, lastAccessed: Double, favIconData: String? = nil) {
         self.id = id
         self.windowId = windowId
         self.title = title
         self.url = url
         self.favIconUrl = favIconUrl
+        self.favIconData = favIconData
         self.active = active
         self.audible = audible
         self.lastAccessed = lastAccessed
@@ -38,15 +41,15 @@ public struct TabRef: Equatable, Hashable, Sendable {
     public let windowID: Int
     public let url: String
     public let host: String
-    public let favIconURL: String?
+    public let favIconData: String?
     public let audible: Bool
 
-    public init(tabId: Int, windowID: Int, url: String, host: String, favIconURL: String?, audible: Bool) {
+    public init(tabId: Int, windowID: Int, url: String, host: String, favIconData: String?, audible: Bool) {
         self.tabId = tabId
         self.windowID = windowID
         self.url = url
         self.host = host
-        self.favIconURL = favIconURL
+        self.favIconData = favIconData
         self.audible = audible
     }
 }

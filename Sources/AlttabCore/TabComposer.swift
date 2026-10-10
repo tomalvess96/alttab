@@ -36,7 +36,7 @@ public enum TabComposer {
                     WindowItem(id: itemID(forTab: tab.id), pid: window.pid, appName: window.appName,
                                bundleID: window.bundleID, title: tab.title, workspace: window.workspace,
                                tab: TabRef(tabId: tab.id, windowID: window.id, url: tab.url, host: tab.host,
-                                           favIconURL: tab.favIconUrl, audible: tab.audible))
+                                           favIconData: tab.favIconData, audible: tab.audible))
                 }
         }
     }
