@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl } from "./lib.js";
+import { tabPayload, tabsMessage, thumbSize, capturable, pickArtwork, mediaKey, faviconRequestUrl, controlAction } from "./lib.js";
 
 test("tabPayload normaliza campos que o Chromium pode omitir", () => {
   assert.deepEqual(tabPayload({ id: 3, windowId: 1, active: true }), {
@@ -57,4 +57,15 @@ test("faviconRequestUrl usa a API interna _favicon da extensão", () => {
     faviconRequestUrl("chrome-extension://abc/_favicon/", "https://a.com/x?y=1"),
     "chrome-extension://abc/_favicon/?pageUrl=https%3A%2F%2Fa.com%2Fx%3Fy%3D1&size=32",
   );
+});
+
+test("controlAction reconhece os botões do player novo pelo nome exato", () => {
+  assert.equal(controlAction("Avançar"), "next");
+  assert.equal(controlAction("Next"), "next");
+  assert.equal(controlAction("Anterior"), "previous");
+  assert.equal(controlAction("Tocar"), "playPause");
+  assert.equal(controlAction("Pausar"), "playPause");
+  assert.equal(controlAction("Avançar 30 segundos"), null);
+  assert.equal(controlAction("Voltar 10 segundos"), null);
+  assert.equal(controlAction(null), null);
 });

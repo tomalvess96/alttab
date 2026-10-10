@@ -48,3 +48,17 @@ export function mediaKey(state) {
 export function faviconRequestUrl(base, pageUrl, size = 32) {
   return `${base}?pageUrl=${encodeURIComponent(pageUrl)}&size=${size}`;
 }
+
+// Nomes exatos (aria-label) dos botões do player do YouTube Music, em pt-BR e inglês.
+// Exatos de propósito: "Avançar 30 segundos" não pode ser confundido com "Avançar".
+// content.js repete esta tabela (content script não importa módulos) — mantenha as duas iguais.
+export const CONTROL_LABELS = {
+  next: ["Avançar", "Próxima", "Próximo", "Next"],
+  previous: ["Anterior", "Previous"],
+  playPause: ["Tocar", "Pausar", "Reproduzir", "Play", "Pause"],
+};
+
+export function controlAction(label) {
+  for (const [action, labels] of Object.entries(CONTROL_LABELS)) if (labels.includes(label)) return action;
+  return null;
+}
