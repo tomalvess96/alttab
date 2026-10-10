@@ -3,21 +3,49 @@ public enum TabComposer {
 
     public static func itemID(forTab tabId: Int) -> Int { -(tabId + 1) }
 
-    /// Liga cada janela do navegador (windowId da extensão) a uma janela do Edge no AeroSpace.
-    /// O título da janela no AeroSpace começa com o título da aba ativa ("… — Microsoft Edge",
-    /// às vezes com " - Áudio em reprodução" no meio). Com uma janela de cada lado, liga direto.
+    /// Título da janela do Edge no AeroSpace sem o sufixo do navegador e sem a marca de áudio.
+    static func normalizedTitle(_ title: String) -> String {
+        var result = title
+        for suffix in [" — Microsoft Edge", " - Microsoft Edge"] where result.hasSuffix(suffix) {
+            result = String(result.dropLast(suffix.count))
+        }
+        for marker in [" - Áudio em reprodução", " - Audio playing", " - Áudio silenciado", " - Audio muted"]
+        where result.hasSuffix(marker) {
+            result = String(result.dropLast(marker.count))
+        }
+        return result
+    }
+
+    /// Liga cada janela do navegador (windowId da extensão) a uma janela do Edge no AeroSpace pelo
+    /// título da aba ativa: primeiro título exato, depois prefixo. Qualquer ambiguidade (títulos
+    /// repetidos, mais de um candidato) deixa a janela sem ligar — melhor mostrar a janela do Edge
+    /// do que pôr as abas no workspace errado. Com uma janela de cada lado, liga direto.
     public static func match(edgeWindows: [WindowItem], tabs: [BrowserTab]) -> [Int: Int] {
         let browserWindows = Dictionary(grouping: tabs, by: \.windowId)
-        var result: [Int: Int] = [:]
-        var free = edgeWindows
-        for (browserWindow, windowTabs) in browserWindows {
-            guard let active = windowTabs.first(where: \.active) ?? windowTabs.max(by: { $0.lastAccessed < $1.lastAccessed }),
-                  !active.title.isEmpty,
-                  let index = free.firstIndex(where: { $0.title.hasPrefix(active.title) }) else { continue }
-            result[browserWindow] = free.remove(at: index).id
+        let order = browserWindows.keys.sorted()
+        let activeTitle: [Int: String] = browserWindows.compactMapValues { windowTabs in
+            (windowTabs.first(where: \.active) ?? windowTabs.max(by: { $0.lastAccessed < $1.lastAccessed }))?.title
         }
-        let unmatched = browserWindows.keys.filter { result[$0] == nil }
-        if unmatched.count == 1, free.count == 1 { result[unmatched[0]] = free[0].id }
+        let titleCount = Dictionary(activeTitle.values.map { ($0, 1) }, uniquingKeysWith: +)
+        var free = edgeWindows.map { (window: $0, title: normalizedTitle($0.title)) }
+        var result: [Int: Int] = [:]
+        var ambiguous = false
+
+        for exact in [true, false] {
+            for browserWindow in order where result[browserWindow] == nil {
+                guard let title = activeTitle[browserWindow], !title.isEmpty else { continue }
+                guard titleCount[title] == 1 else { ambiguous = true; continue }
+                let candidates = free.indices.filter { exact ? free[$0].title == title : free[$0].title.hasPrefix(title) }
+                if candidates.count == 1 {
+                    result[browserWindow] = free.remove(at: candidates[0]).window.id
+                } else if candidates.count > 1 {
+                    ambiguous = true
+                }
+            }
+        }
+
+        let unmatched = order.filter { result[$0] == nil }
+        if !ambiguous, unmatched.count == 1, free.count == 1 { result[unmatched[0]] = free[0].window.id }
         return result
     }
 

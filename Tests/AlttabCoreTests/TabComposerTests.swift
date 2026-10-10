@@ -72,3 +72,43 @@ private func tab(_ id: Int, window: Int, _ title: String, active: Bool = false, 
         #expect(model.visible.map(\.id) == [-3])
     }
 }
+
+@Suite struct TabComposerAmbiguityTests {
+    private func edge(_ id: Int, _ ws: String, _ title: String) -> WindowItem {
+        WindowItem(id: id, pid: 99, appName: "Microsoft Edge", bundleID: TabComposer.edgeBundleID, title: title, workspace: ws)
+    }
+    private func active(_ id: Int, window: Int, _ title: String) -> BrowserTab {
+        BrowserTab(id: id, windowId: window, title: title, url: "https://x.com", favIconUrl: nil,
+                   active: true, audible: false, lastAccessed: 1)
+    }
+
+    @Test func identicalTitlesAreLeftUnmatched() {
+        let windows = [edge(1, "2", "Nova guia — Microsoft Edge"), edge(2, "3", "Nova guia — Microsoft Edge")]
+        let tabs = [active(10, window: 5, "Nova guia"), active(11, window: 6, "Nova guia")]
+        #expect(TabComposer.match(edgeWindows: windows, tabs: tabs).isEmpty)
+    }
+
+    @Test func exactTitleWinsOverPrefix() {
+        let windows = [edge(1, "2", "Inbox (3) - Outlook — Microsoft Edge"), edge(2, "3", "Inbox — Microsoft Edge")]
+        let tabs = [active(10, window: 5, "Inbox"), active(11, window: 6, "Inbox (3) - Outlook")]
+        #expect(TabComposer.match(edgeWindows: windows, tabs: tabs) == [5: 2, 6: 1])
+    }
+
+    @Test func audioMarkerStillMatchesExactly() {
+        let windows = [edge(1, "2", "Clipe - YouTube - Áudio em reprodução — Microsoft Edge"), edge(2, "3", "Clipe - YouTube Music — Microsoft Edge")]
+        let tabs = [active(10, window: 5, "Clipe - YouTube"), active(11, window: 6, "Clipe - YouTube Music")]
+        #expect(TabComposer.match(edgeWindows: windows, tabs: tabs) == [5: 1, 6: 2])
+    }
+
+    @Test func fallbackOnlyWhenNothingWasAmbiguous() {
+        let windows = [edge(1, "2", "A — Microsoft Edge"), edge(2, "3", "A — Microsoft Edge"), edge(3, "4", "Z — Microsoft Edge")]
+        let tabs = [active(10, window: 5, "A"), active(11, window: 6, "A"), active(12, window: 7, "Sem relação")]
+        #expect(TabComposer.match(edgeWindows: windows, tabs: tabs).isEmpty)
+    }
+
+    @Test func resultIsDeterministic() {
+        let windows = [edge(1, "2", "B — Microsoft Edge"), edge(2, "3", "A — Microsoft Edge")]
+        let tabs = [active(10, window: 5, "A"), active(11, window: 6, "B")]
+        for _ in 0..<20 { #expect(TabComposer.match(edgeWindows: windows, tabs: tabs) == [5: 2, 6: 1]) }
+    }
+}

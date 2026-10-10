@@ -43,7 +43,8 @@ async function loadFavicon(url) {
 function sendTabs() {
   clearTimeout(tabsTimer);
   tabsTimer = setTimeout(async () => {
-    const tabs = await chrome.tabs.query({});
+    // Só janelas normais: pop-up e janela de app não existem como janela comum no AeroSpace.
+    const tabs = await chrome.tabs.query({ windowType: "normal" });
     await Promise.all(tabs.map((tab) => loadFavicon(tab.url)));
     const live = new Set(tabs.map((tab) => tab.url));
     for (const url of Object.keys(favicons)) if (!live.has(url)) delete favicons[url];
