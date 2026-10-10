@@ -29,6 +29,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotkey.isSwitcherOpen = { [weak self] in self?.controller.isOpen ?? false }
         hotkeyActive = hotkey.start()
         if !hotkeyActive { openAccessibility() }
+        // Ao acordar ou voltar à sessão o tap pode ficar "ligado" e surdo: recria sem esperar o vigia.
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification,
+                     NSWorkspace.sessionDidBecomeActiveNotification] {
+            center.addObserver(self, selector: #selector(recreateHotkey), name: name, object: nil)
+        }
+    }
+
+    @objc private func recreateHotkey() {
+        hotkeyActive = hotkey.restart()
     }
 
     private func setIcon(warning: Bool) {
