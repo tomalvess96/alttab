@@ -140,7 +140,6 @@ Sources/AlttabCore/   lógica pura + testes em Tests/AlttabCoreTests
 Sources/AlttabApp/    app (AppKit + SwiftUI)
 Sources/AlttabHost/   ponte Native Messaging
 extension/            extensão do Edge
-docs/superpowers/     especificação, planos e registro dos testes
 ```
 
 ## Limitações conhecidas
